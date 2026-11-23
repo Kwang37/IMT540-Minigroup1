@@ -595,6 +595,29 @@
       flex: 1;
     }
 
+    .reflection-next-actions > .btn {
+      min-height: 44px;
+    }
+
+    .reflection-draft {
+      border-top: 1px solid var(--border);
+      margin-top: var(--space-3);
+      padding-top: var(--space-3);
+    }
+
+    #reflectionDraftHint,
+    #draftStatus {
+      margin-top: var(--space-2);
+      font-size: 0.875rem;
+    }
+
+    @media (max-width: 599px) {
+      .reflection-next-actions > .btn {
+        flex: 1 0 100%;
+        white-space: normal;
+      }
+    }
+
     .log-output {
       border-top: 1px solid var(--border);
       padding-top: var(--space-3);
@@ -924,14 +947,17 @@
           <details id="reflectionReference" hidden><summary>Revisit the Gallery card you marked</summary><div id="reflectionReferenceCard"></div></details>
           <label for="understandingShiftField" id="secondReflectionPrompt">What did one Gallery arrangement help you notice about your own? Tell us what it changed or reinforced in how you see the concept.</label>
           <textarea id="understandingShiftField" placeholder="In the Gallery, I noticed … That made me see my arrangement as …" rows="6" oninput="validateStep2Gate()"></textarea>
-          <p id="draftStatus" role="status"></p>
-          <div class="action-row">
-
-            <button type="button" id="toStep3Btn" class="btn" onclick="finishReflection(true)" disabled>
-              Save & Try Another Arrangement
-            </button>
-            <button type="button" class="btn" onclick="saveReflectionDraft()">Save Reflection Draft</button>
-            <button type="button" id="keepFirstBtn" class="btn btn-primary" onclick="finishReflection(false)">Save & Keep My First Arrangement</button>
+          <div class="reflection-next" role="group" aria-labelledby="reflectionNextLabel">
+            <p id="reflectionNextLabel"><strong>Choose how to continue</strong></p>
+            <div class="action-row reflection-next-actions">
+              <button type="button" id="keepFirstBtn" class="btn btn-primary" onclick="finishReflection(false)">Keep First Arrangement &amp; View Summary</button>
+              <button type="button" id="toStep3Btn" class="btn btn-primary" onclick="finishReflection(true)" disabled>Continue to a New Arrangement</button>
+            </div>
+          </div>
+          <div class="reflection-draft">
+            <button type="button" class="btn" onclick="saveReflectionDraft()" aria-describedby="reflectionDraftHint">Save Draft for Later</button>
+            <p id="reflectionDraftHint">Saves your notes in this browser and keeps you on this page.</p>
+            <p id="draftStatus" role="status"></p>
           </div>
         </section>
 
@@ -1051,8 +1077,6 @@
 
     function syncPhotoWorkspace() {
       const usePhoto = mode === "inperson";
-      document.getElementById("toStep3Btn").classList.toggle("btn-primary", usePhoto);
-      document.getElementById("keepFirstBtn").classList.toggle("btn-primary", !usePhoto);
       document.getElementById("backToComposition").hidden = usePhoto || v1Locked;
       document.getElementById("nextExploration").hidden = usePhoto || currentStep === 1.25;
       document.getElementById("reflectionIntro").hidden = usePhoto;
@@ -2169,7 +2193,7 @@
 
     function saveReflectionDraft() {
       document.getElementById("draftStatus").textContent = persistSessionState()
-        ? "Draft saved in this browser."
+        ? "Draft saved. Choose an option above when you’re ready to continue."
         : "Browser storage unavailable or full. Export a session copy from the final step.";
     }
 
