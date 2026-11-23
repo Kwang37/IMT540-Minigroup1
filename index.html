@@ -716,6 +716,100 @@
       .card-caption { flex-wrap: wrap; }
       .flip-art, .flip-art:hover { transform: none; transition: none; }
     }
+    .concept-intro, .concept-picker-heading { display: none; }
+
+    @media (min-width: 880px) {
+      .entry-gate:has(#conceptPicker:not([hidden])) {
+        padding: clamp(28px, 5vw, 80px);
+      }
+
+      .gate-dialog:has(#conceptPicker:not([hidden])) {
+        max-width: 1180px;
+        display: grid;
+        grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+        grid-template-rows: auto auto 1fr auto;
+        column-gap: clamp(32px, 5vw, 76px);
+        row-gap: 14px;
+        align-items: start;
+        padding: clamp(28px, 5vw, 68px);
+        border-radius: 24px;
+      }
+
+      .gate-dialog:has(#conceptPicker:not([hidden])) .gate-header {
+        grid-area: 1 / 1;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 24px;
+        align-self: end;
+      }
+
+      .gate-dialog:has(#conceptPicker:not([hidden])) .gate-header h1 {
+        max-width: 8em;
+        font-size: clamp(2.5rem, 4.6vw, 4rem);
+        line-height: 1.04;
+        letter-spacing: -.045em;
+      }
+
+      .gate-dialog:has(#conceptPicker:not([hidden])) .mark-4squares {
+        grid-template-columns: repeat(2, 13px);
+        gap: 4px;
+      }
+
+      .gate-dialog:has(#conceptPicker:not([hidden])) .mark-4squares span {
+        width: 13px;
+        height: 13px;
+      }
+
+      .gate-dialog:has(#conceptPicker:not([hidden])) .concept-intro {
+        display: block;
+        grid-area: 2 / 1;
+        max-width: 29ch;
+        color: var(--text-muted);
+        font-size: clamp(1rem, 1.4vw, 1.2rem);
+        line-height: 1.6;
+      }
+
+      .gate-dialog:has(#conceptPicker:not([hidden])) .concept-picker-heading {
+        display: block;
+        grid-area: 1 / 2;
+        align-self: end;
+        font-size: 1.125rem;
+      }
+
+      #conceptPicker:not([hidden]) {
+        grid-area: 2 / 2 / 4;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: clamp(14px, 2.5vw, 32px);
+        padding: clamp(16px, 3vw, 36px);
+        border-radius: 20px;
+        background: #f5f7fb;
+      }
+
+      #conceptPicker .concept-bubble {
+        width: min(100%, clamp(7rem, 12vw, 10rem));
+        background: #fff;
+        border-color: #b9c7db;
+        font-size: clamp(1rem, 1.55vw, 1.25rem);
+        font-weight: 650;
+      }
+
+      #conceptPicker .concept-bubble:hover {
+        border-color: var(--accent);
+        background: #edf3fc;
+      }
+
+      .gate-dialog:has(#conceptPicker:not([hidden])) #motionToggle {
+        grid-area: 4 / 2;
+        justify-self: end;
+        min-height: 40px;
+      }
+
+      .gate-dialog:has(#conceptPicker:not([hidden])) #resumeDraftBtn {
+        grid-area: 3 / 1;
+        justify-self: start;
+        align-self: start;
+      }
+    }
   </style>
 </head>
 <body>
@@ -729,6 +823,9 @@
         </div>
         <h1 id="gateHeading">4SQUARES Workspace</h1>
       </header>
+
+      <p class="concept-intro">Arrange four squares to express an idea. Then see how others approached it and decide what you’d keep or change.</p>
+      <h2 class="concept-picker-heading" id="conceptPickerHeading">Choose a concept</h2>
 
       <div id="conceptPicker" class="gate-grid" role="group" aria-label="Choose a concept">
         <button type="button" class="gate-option concept-bubble" onclick="chooseConcept(this)">Tension</button>
