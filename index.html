@@ -40,6 +40,7 @@
       color: var(--text);
       line-height: 1.5;
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       flex-direction: column;
       -webkit-font-smoothing: antialiased;
@@ -319,7 +320,6 @@
       background-color: var(--bg);
       background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
       background-size: 5% 5%;
-      touch-action: none;
     }
 
     .square-node {
@@ -336,7 +336,6 @@
       align-items: center;
       justify-content: center;
       user-select: none;
-      touch-action: none;
     }
 
     .square-node:active {
@@ -595,29 +594,6 @@
       flex: 1;
     }
 
-    .reflection-next-actions > .btn {
-      min-height: 44px;
-    }
-
-    .reflection-draft {
-      border-top: 1px solid var(--border);
-      margin-top: var(--space-3);
-      padding-top: var(--space-3);
-    }
-
-    #reflectionDraftHint,
-    #draftStatus {
-      margin-top: var(--space-2);
-      font-size: 0.875rem;
-    }
-
-    @media (max-width: 599px) {
-      .reflection-next-actions > .btn {
-        flex: 1 0 100%;
-        white-space: normal;
-      }
-    }
-
     .log-output {
       border-top: 1px solid var(--border);
       padding-top: var(--space-3);
@@ -707,6 +683,39 @@
       .flip-art:hover, .flip-art:focus-visible { transform: none; }
     }
     .context-panel.summary-only { grid-column: 1 / -1; width: min(100%, 50rem); justify-self: center; }
+    .board-surface { position: relative; }
+    .touch-hint { display: none; }
+    #board.is-editable .square-node { touch-action: none; -webkit-touch-callout: none; }
+    button, summary, .checkbox-row { touch-action: manipulation; }
+    .btn:active:not(:disabled), .gate-option:active, .tilt-bar button:active {
+      outline: 2px solid var(--accent);
+      outline-offset: -2px;
+    }
+    .draft-actions { padding-top: 12px; border-top: 1px solid var(--border); }
+    .draft-actions p { margin-top: 8px; }
+    @media (max-width: 767px) {
+      .entry-gate { min-height: 100vh; min-height: 100dvh; align-items: start; padding: 20px 16px; }
+      .gate-dialog { border: 0; padding: 0; gap: 20px; }
+      .gate-header h1 { font-size: 1.5rem; }
+      #modePicker { grid-template-columns: 1fr; }
+      #modePicker .gate-option { min-height: 80px; padding: 16px; }
+      #tutorialContinue { flex-basis: 100%; order: -1; }
+      .workspace-main { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 16px; padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+      .context-panel { min-width: 0; padding: 16px; }
+      .btn, .gate-option, .choice-btn, .tilt-bar button, summary, .checkbox-row { min-height: 44px; }
+      .btn { white-space: normal; }
+      textarea, input[type="text"], select { font-size: 16px; }
+      .board-surface:has(.is-editable) .touch-hint { display: block; margin-bottom: 8px; font-size: .875rem; }
+      .reflection-screen #board { width: min(100%, 280px); margin-inline: auto; }
+      .tilt-bar { position: static; transform: none; margin-top: 10px; justify-content: space-between; }
+      .tilt-bar button { min-width: 44px; }
+      .reflection-next > .btn { flex: 1 0 100%; }
+      .compare-grid, .journey-grid { grid-template-columns: minmax(0, 1fr); }
+      .compare-item { min-width: 0; }
+      .compare-item-head { flex-wrap: wrap; }
+      .card-caption { flex-wrap: wrap; }
+      .flip-art, .flip-art:hover { transform: none; transition: none; }
+    }
   </style>
 </head>
 <body>
@@ -787,7 +796,12 @@
           <h2 id="galleryTitle" tabindex="-1">Gallery</h2>
           <button type="button" class="btn btn-primary" onclick="goToStep(2)">Continue to Reflection</button>
         </header>
-        <p>Flip a card to read the interpretation behind the arrangement.</p>
+        <p>Tap or click a card to read the interpretation behind the arrangement.</p>
+        <details class="disclosure-block">
+          <summary>Simulated Peer Feedback</summary>
+          <p>This example comment was written in advance. It does not come from a classmate or respond to your arrangement.</p>
+          <blockquote>What does the space around the square that stands apart suggest to you?</blockquote>
+        </details>
         <div class="action-row">
           <button class="btn" type="button" onclick="scrollSamples(-1)">Previous Cards</button>
           <button class="btn" type="button" onclick="scrollSamples(1)">Next Cards</button>
@@ -827,22 +841,24 @@
             </div>
           </div>
 
+          <div class="board-surface">
+            <p class="touch-hint">Tap a square to select it. Drag to move it. Use the buttons to rotate.</p>
           <div
             id="board"
             class="canvas-frame"
             role="application"
             aria-label="Four squares composition board. Select a square with Tab, move with Arrow keys, rotate with R."
-            onpointerdown="onBoardBackgroundTap(event)"
+            onclick="onBoardBackgroundTap(event)"
           >
+            <div id="squaresContainer"></div>
+          </div>
             <div id="tiltControl" class="tilt-bar" role="toolbar" aria-label="Square rotation" onpointerdown="event.stopPropagation()" hidden>
-              <button type="button" onclick="rotateActiveSquare(-15)" aria-label="Rotate counterclockwise 15 degrees">-15°</button>
+              <button type="button" onclick="rotateActiveSquare(-15, event)" aria-label="Rotate counterclockwise 15 degrees">-15°</button>
               <output id="tiltReadout">0°</output>
-              <button type="button" onclick="rotateActiveSquare(15)" aria-label="Rotate clockwise 15 degrees">+15°</button>
-              <button type="button" onclick="resetActiveTilt()">0°</button>
+              <button type="button" onclick="rotateActiveSquare(15, event)" aria-label="Rotate clockwise 15 degrees">+15°</button>
+              <button type="button" onclick="resetActiveTilt(event)">0°</button>
             </div>
 
-
-            <div id="squaresContainer"></div>
           </div>
 
           <section id="photoWorkspace" class="disclosure-block" hidden>
@@ -882,13 +898,14 @@
             <div class="header-group">
               <label class="checkbox-row">
                 <input type="checkbox" id="galleryGhostToggle" onchange="renderCompareGallery()" checked />
-                <span>V1 Outline on All</span>
+                <span>Show the original V1 as dashed outlines</span>
               </label>
               <button type="button" class="btn" onclick="goToStep(3)">Back to Variations</button>
             </div>
           </div>
 
-          <div id="compareGalleryGrid" class="compare-grid" role="region" aria-label="Side-by-side comparison of all saved versions"></div>
+          <p class="meta-note">Dashed outlines show the original arrangement (V1). Solid squares show the saved version on each card.</p>
+          <div id="compareGalleryGrid" class="compare-grid" role="region" aria-label="Comparison of saved versions"></div>
         </div>
       </section>
 
@@ -947,16 +964,16 @@
           <details id="reflectionReference" hidden><summary>Revisit the Gallery card you marked</summary><div id="reflectionReferenceCard"></div></details>
           <label for="understandingShiftField" id="secondReflectionPrompt">What did one Gallery arrangement help you notice about your own? Tell us what it changed or reinforced in how you see the concept.</label>
           <textarea id="understandingShiftField" placeholder="In the Gallery, I noticed … That made me see my arrangement as …" rows="6" oninput="validateStep2Gate()"></textarea>
-          <div class="reflection-next" role="group" aria-labelledby="reflectionNextLabel">
+          <div role="group" aria-labelledby="reflectionNextLabel">
             <p id="reflectionNextLabel"><strong>Choose how to continue</strong></p>
-            <div class="action-row reflection-next-actions">
+            <div class="action-row reflection-next">
               <button type="button" id="keepFirstBtn" class="btn btn-primary" onclick="finishReflection(false)">Keep First Arrangement &amp; View Summary</button>
               <button type="button" id="toStep3Btn" class="btn btn-primary" onclick="finishReflection(true)" disabled>Continue to a New Arrangement</button>
             </div>
           </div>
-          <div class="reflection-draft">
-            <button type="button" class="btn" onclick="saveReflectionDraft()" aria-describedby="reflectionDraftHint">Save Draft for Later</button>
-            <p id="reflectionDraftHint">Saves your notes in this browser and keeps you on this page.</p>
+          <div class="draft-actions">
+            <button type="button" class="btn" onclick="saveReflectionDraft()" aria-describedby="draftHint">Save Draft for Later</button>
+            <p id="draftHint" class="meta-note">Saves your notes in this browser and keeps you on this page.</p>
             <p id="draftStatus" role="status"></p>
           </div>
         </section>
@@ -1025,8 +1042,7 @@
     let keptChoiceIdx = 0;
     let workingSquares = [];
     let activeSquareId = null;
-    let draggingSquareId = null;
-    let dragOffset = { x: 0, y: 0 };
+    let squareGesture = null;
 
     let firstReflection = null;
     let secondReflection = null;
@@ -1908,6 +1924,7 @@
     }
 
     function renderBoard() {
+      document.getElementById("board").classList.toggle("is-editable", canModifyBoard());
       const container = document.getElementById("squaresContainer");
       container.querySelectorAll(".square-ghost").forEach(el => el.remove());
 
@@ -1932,6 +1949,14 @@
           btn.className = "square-node";
           btn.textContent = `#${sq.id}`;
           btn.addEventListener("pointerdown", (e) => startPointerDrag(e, sq.id));
+          btn.addEventListener("lostpointercapture", (e) => finishPointerDrag(e, true));
+          btn.addEventListener("contextmenu", (e) => { if (canModifyBoard()) e.preventDefault(); });
+          btn.addEventListener("click", (e) => {
+            if (e.detail === 0 && canModifyBoard()) {
+              activeSquareId = sq.id;
+              renderBoard();
+            }
+          });
           btn.addEventListener("keydown", (e) => handleSquareKeydown(e, sq.id));
           squareButtonMap.set(sq.id, btn);
           container.appendChild(btn);
@@ -1956,45 +1981,54 @@
     }
 
     function startPointerDrag(e, id) {
-      e.stopPropagation();
-      activeSquareId = id;
-      squareButtonMap.get(id)?.focus();
+      if (!e.isPrimary || e.button !== 0 || squareGesture || !canModifyBoard()) return;
+      const square = workingSquares.find(s => s.id === id);
+      const { width, height } = document.getElementById("board").getBoundingClientRect();
+      if (!square || !width || !height) return;
+      e.preventDefault();
+      squareGesture = { id: e.pointerId, button: e.currentTarget, square, width, height, x: e.clientX, y: e.clientY, moved: false };
+      e.currentTarget.setPointerCapture(e.pointerId);
+    }
 
-      if (!canModifyBoard()) {
-        renderBoard();
-        return;
-      }
-
-      draggingSquareId = id;
-      const boardRect = document.getElementById("board").getBoundingClientRect();
-      const sq = workingSquares.find(s => s.id === id);
-      const clickXPercent = ((e.clientX - boardRect.left) / boardRect.width) * 100;
-      const clickYPercent = ((e.clientY - boardRect.top) / boardRect.height) * 100;
-
-      dragOffset.x = clickXPercent - sq.x;
-      dragOffset.y = clickYPercent - sq.y;
-      renderBoard();
+    function gesturePosition(e, g) {
+      const dx = e.clientX - g.x, dy = e.clientY - g.y;
+      if (!g.moved && Math.hypot(dx, dy) <= 5) return null;
+      g.moved = true;
+      return {
+        x: Math.max(0, Math.min(83.5, Math.round(g.square.x + dx * 100 / g.width))),
+        y: Math.max(0, Math.min(83.5, Math.round(g.square.y + dy * 100 / g.height)))
+      };
     }
 
     window.addEventListener("pointermove", (e) => {
-      if (!draggingSquareId || !canModifyBoard()) return;
-      const boardRect = document.getElementById("board").getBoundingClientRect();
-      const sq = workingSquares.find(s => s.id === draggingSquareId);
-      if (!sq) return;
+      const g = squareGesture;
+      if (!g || e.pointerId !== g.id || !canModifyBoard()) return;
+      const pos = gesturePosition(e, g);
+      if (pos) {
+        g.button.style.left = pos.x + "%";
+        g.button.style.top = pos.y + "%";
+      }
+    });
 
-      const rawX = ((e.clientX - boardRect.left) / boardRect.width) * 100 - dragOffset.x;
-      const rawY = ((e.clientY - boardRect.top) / boardRect.height) * 100 - dragOffset.y;
-
-      sq.x = Math.max(0, Math.min(83.5, Math.round(rawX)));
-      sq.y = Math.max(0, Math.min(83.5, Math.round(rawY)));
-
-      updateDraftStatusUI();
+    function finishPointerDrag(e, canceled = false) {
+      const g = squareGesture;
+      if (!g || e.pointerId !== g.id) return;
+      squareGesture = null;
+      if (g.button.hasPointerCapture(g.id)) g.button.releasePointerCapture(g.id);
+      if (!canceled && canModifyBoard() && workingSquares.includes(g.square)) {
+        const pos = gesturePosition(e, g);
+        if (pos) {
+          Object.assign(g.square, pos);
+          updateDraftStatusUI();
+        }
+        activeSquareId = g.square.id;
+        if (e.pointerType === "mouse") g.button.focus({ preventScroll: true });
+      }
       renderBoard();
-    });
+    }
 
-    window.addEventListener("pointerup", () => {
-      draggingSquareId = null;
-    });
+    window.addEventListener("pointerup", (e) => finishPointerDrag(e));
+    window.addEventListener("pointercancel", (e) => finishPointerDrag(e, true));
 
     function handleSquareKeydown(e, id) {
       const sq = workingSquares.find(s => s.id === id);
@@ -2041,24 +2075,24 @@
       bar.style.top = `${sq.y > 12 ? sq.y - 9 : sq.y + 19}%`;
     }
 
-    function rotateActiveSquare(delta) {
+    function rotateActiveSquare(delta, event) {
       if (!canModifyBoard()) return;
       const sq = workingSquares.find(s => s.id === activeSquareId);
       if (!sq) return;
       sq.rot = Math.max(-45, Math.min(45, sq.rot + delta));
       updateDraftStatusUI();
       renderBoard();
-      squareButtonMap.get(activeSquareId)?.focus();
+      if (event?.detail === 0) event.currentTarget.focus({ preventScroll: true });
     }
 
-    function resetActiveTilt() {
+    function resetActiveTilt(event) {
       if (!canModifyBoard()) return;
       const sq = workingSquares.find(s => s.id === activeSquareId);
       if (!sq) return;
       sq.rot = 0;
       updateDraftStatusUI();
       renderBoard();
-      squareButtonMap.get(activeSquareId)?.focus();
+      if (event?.detail === 0) event.currentTarget.focus({ preventScroll: true });
     }
 
     function renderCompareGallery() {
