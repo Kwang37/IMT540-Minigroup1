@@ -782,21 +782,107 @@
     }
     .concept-intro, .concept-picker-heading { display: none; }
 
+    .tutorial-content { display: contents; }
+
     @media (min-width: 880px) {
-      .entry-gate:has(#conceptPicker:not([hidden])) {
+      .entry-gate {
         padding: clamp(28px, 5vw, 80px);
       }
 
-      .gate-dialog:has(#conceptPicker:not([hidden])) {
+      .gate-dialog {
         max-width: 1180px;
+        padding: clamp(28px, 5vw, 68px);
+        border-radius: 24px;
+      }
+
+      #tutorial {
+        grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr);
+        grid-template-rows: auto 1fr;
+        column-gap: clamp(24px, 4vw, 64px);
+        row-gap: 12px;
+        align-items: start;
+      }
+
+      #tutorialProgress {
+        grid-area: 1 / 1;
+        font-size: .875rem;
+      }
+
+      #tutorialTitle {
+        grid-area: 2 / 1;
+        font-size: clamp(2rem, 3.25vw, 3.25rem);
+        line-height: 1.1;
+        letter-spacing: -.035em;
+      }
+
+      .tutorial-content {
+        grid-area: 1 / 2 / 3;
+        display: grid;
+        align-content: space-between;
+        gap: 24px;
+        min-height: 16rem;
+        padding: clamp(20px, 3vw, 36px);
+        border-radius: 20px;
+        background: #f5f7fb;
+      }
+
+      #tutorialBody {
+        font-size: clamp(1rem, 1.35vw, 1.125rem);
+      }
+
+      #tutorial .btn,
+      .gate-dialog:has(#modePicker:not([hidden])) > .btn {
+        min-height: 40px;
+      }
+
+      .gate-dialog:has(#modePicker:not([hidden])) {
+        display: grid;
+        grid-template-columns: max-content max-content minmax(0, 1fr);
+        gap: 16px 8px;
+        align-items: start;
+      }
+
+      .gate-dialog:has(#modePicker:not([hidden])) .gate-header,
+      #modeHeading,
+      #modePicker {
+        grid-column: 1 / -1;
+      }
+
+      .gate-dialog:has(#modePicker:not([hidden])) #resumeDraftBtn {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
+
+      #modeHeading {
+        font-size: clamp(1.75rem, 2.9vw, 2.75rem);
+        line-height: 1.15;
+        letter-spacing: -.025em;
+      }
+
+      #modePicker {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: clamp(12px, 2vw, 24px);
+        padding: clamp(16px, 3vw, 36px);
+        border-radius: 20px;
+        background: #f5f7fb;
+      }
+
+      #modePicker .gate-option {
+        min-height: 128px;
+        justify-content: center;
+        padding: clamp(16px, 2vw, 24px);
+      }
+
+      #modePicker .gate-option strong { font-size: 1.125rem; }
+      #modePicker .gate-option span { font-size: .9375rem; }
+
+      .gate-dialog:has(#conceptPicker:not([hidden])) {
         display: grid;
         grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
         grid-template-rows: auto auto 1fr;
         column-gap: clamp(32px, 5vw, 76px);
         row-gap: 14px;
         align-items: start;
-        padding: clamp(28px, 5vw, 68px);
-        border-radius: 24px;
       }
 
       .gate-dialog:has(#conceptPicker:not([hidden])) .gate-header {
@@ -897,11 +983,13 @@
       <section id="tutorial" aria-labelledby="tutorialTitle" hidden>
         <p id="tutorialProgress" class="meta-note"></p>
         <h2 id="tutorialTitle" tabindex="-1" aria-describedby="tutorialProgress"></h2>
-        <p id="tutorialBody"></p>
-        <div class="action-row">
-          <button id="tutorialBack" class="btn" type="button" onclick="showTutorialStep(tutorialStep - 1)" hidden>Back</button>
-          <button id="tutorialContinue" class="btn btn-primary" type="button" onclick="advanceTutorial()">Continue</button>
-          <button class="btn" type="button" onclick="closeTutorial()">Skip Tutorial</button>
+        <div class="tutorial-content">
+          <p id="tutorialBody"></p>
+          <div class="action-row">
+            <button id="tutorialBack" class="btn" type="button" onclick="showTutorialStep(tutorialStep - 1)" hidden>Back</button>
+            <button id="tutorialContinue" class="btn btn-primary" type="button" onclick="advanceTutorial()">Continue</button>
+            <button class="btn" type="button" onclick="closeTutorial()">Skip Tutorial</button>
+          </div>
         </div>
       </section>
       <button id="reviewTutorial" type="button" class="btn" onclick="openTutorial()" hidden>View Tutorial</button>
