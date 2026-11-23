@@ -282,10 +282,46 @@
       }
     }
 
+    /* Desktop workspace */
     @media (min-width: 880px) {
       .workspace-main {
-        grid-template-columns: 1fr 390px;
-        padding: var(--space-5);
+        --board-edge: clamp(320px, 68vh, 560px);
+        --panel-width: clamp(360px, 39vw, 580px);
+        max-width: 1400px;
+        grid-template-columns: minmax(0, 1fr);
+        padding: clamp(24px, 2.5vw, 40px);
+        gap: clamp(24px, 3vw, 48px);
+      }
+
+      .workspace-main:has(.stage-section:not([hidden])) {
+        grid-template-columns: minmax(0, var(--board-edge)) minmax(0, var(--panel-width));
+        justify-content: center;
+      }
+
+      .workspace-main:has(.stage-section.wide) {
+        grid-template-columns: minmax(0, 1fr) minmax(0, clamp(340px, 30vw, 440px));
+      }
+
+      .workspace-main .stage-section,
+      .workspace-main .context-panel {
+        min-width: 0;
+      }
+
+      .workspace-main .stage-section {
+        max-width: none;
+      }
+
+      #canvasView > .canvas-toolbar:not(:has(> :not([hidden]))) {
+        display: none;
+      }
+    }
+
+    @media (min-width: 1200px) {
+      .app-header,
+      .app-header .header-group,
+      .desktop-progress .step-list {
+        flex-wrap: nowrap;
+        white-space: nowrap;
       }
     }
 
