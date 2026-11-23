@@ -261,6 +261,8 @@
       color: var(--bg);
     }
 
+    .mobile-progress, .session-actions { display: none; }
+
     /* Mobile-First Main Grid */
     .workspace-main {
       flex: 1;
@@ -713,6 +715,43 @@
       .compare-grid, .journey-grid { grid-template-columns: minmax(0, 1fr); }
       .compare-item { min-width: 0; }
       .compare-item-head { flex-wrap: wrap; }
+      .app-header { display: grid; gap: 8px; padding: 8px 12px; }
+      .app-header .desktop-progress, .app-header .desktop-reset { display: none; }
+      .workspace-top-row, .mobile-progress {
+        display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0;
+      }
+      .workspace-actions, .workspace-status { display: flex; align-items: center; gap: 6px; }
+      .workspace-actions { flex: none; }
+      .workspace-actions .btn { padding-inline: 9px; white-space: nowrap; }
+      .workspace-status { justify-content: flex-end; flex-wrap: wrap; gap: 3px 6px; }
+      .workspace-status .badge {
+        border: 0; border-radius: 999px; font-size: .6875rem; line-height: 1.35;
+        padding: 3px 8px; white-space: nowrap;
+      }
+      .mobile-step-list {
+        flex: 1; min-width: 0; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap;
+        -webkit-overflow-scrolling: touch; scrollbar-width: thin;
+      }
+      .mobile-step-list li { flex: none; }
+      #workspaceShell button:not(.square-node) { min-height: 44px; }
+      .mobile-progress .btn { min-height: 44px; border-radius: 6px; white-space: nowrap; }
+      .mobile-step-list .btn { border-color: transparent; padding-inline: 9px; }
+      .mobile-progress .btn[aria-current="step"] { background: var(--text); color: var(--bg); }
+      .mobile-progress .btn:focus-visible { outline-offset: -3px; }
+      .mobile-gallery { flex: none; }
+      .session-actions { display: block; margin: 0 16px max(16px, env(safe-area-inset-bottom)); }
+      .session-actions summary { display: list-item; padding-block: 12px; cursor: pointer; color: var(--text-muted); }
+      .compare-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 8px; }
+      .compare-toolbar > .badge { justify-self: start; }
+      .compare-toolbar > .header-group { display: contents; }
+      .compare-toolbar .checkbox-row { grid-area: 2 / 1 / 3 / -1; margin: 0; }
+      .compare-toolbar .checkbox-row input { width: 18px; height: 18px; flex: none; }
+      .compare-toolbar .btn { grid-area: 1 / 2; padding-inline: 9px; }
+      #compareView > .meta-note { margin-bottom: 8px; line-height: 1.35; }
+      #compareView .compare-item { padding: 8px; }
+      #compareView .canvas-frame {
+        width: min(100%, 420px); width: min(100%, clamp(220px, 52dvh, 420px)); margin-inline: auto;
+      }
       .card-caption { flex-wrap: wrap; }
       .flip-art, .flip-art:hover { transform: none; transition: none; }
     }
@@ -865,14 +904,18 @@
   <!-- WORKSPACE APPLICATION -->
   <div id="workspaceShell" hidden>
     <header class="app-header">
-      <div class="header-group">
-        <button type="button" class="btn" onclick="openTutorial()">Tutorial</button>
-        <button type="button" class="btn" onclick="exitToGate()">Switch Mode</button>
-        <span id="conceptIndicator" class="badge"></span>
-        <span id="modeIndicator" class="badge">In-Person Assist</span>
+      <div class="header-group workspace-top-row">
+        <div class="header-group workspace-actions">
+          <button type="button" class="btn" onclick="openTutorial()">Tutorial</button>
+          <button type="button" class="btn" onclick="exitToGate()">Switch Mode</button>
+        </div>
+        <div class="header-group workspace-status" role="group" aria-label="Current concept and mode">
+          <span id="conceptIndicator" class="badge"></span>
+          <span id="modeIndicator" class="badge">In-Person Assist</span>
+        </div>
       </div>
 
-      <nav aria-label="Activity progress">
+      <nav class="desktop-progress" aria-label="Activity progress">
         <ol class="step-list">
           <li id="stepNav1" class="step-item" aria-current="step">1. Make a Composition</li>
           <li id="stepNavGallery" class="step-item">Gallery</li>
@@ -882,8 +925,18 @@
         </ol>
       </nav>
 
-      <div class="header-group">
-        <button type="button" id="resetOnlineBtn" class="btn" onclick="resetSessionStorage()">Reset Session</button>
+      <nav class="mobile-progress" aria-label="Activity steps">
+        <ol id="mobileStepList" class="step-list mobile-step-list">
+          <li><button type="button" class="btn" data-step="1" onclick="navigateMobileStep(1)">1. Make a Composition</button></li>
+          <li><button type="button" class="btn" data-step="2" onclick="navigateMobileStep(2)">2. Reflection</button></li>
+          <li><button type="button" class="btn" data-step="3" onclick="navigateMobileStep(3)">3. Try Another Arrangement</button></li>
+          <li><button type="button" class="btn" data-step="4" onclick="navigateMobileStep(4)">4. Compare &amp; Export</button></li>
+        </ol>
+        <button type="button" class="btn mobile-gallery" data-step="1.5" onclick="navigateMobileStep(1.5)">Gallery</button>
+      </nav>
+
+      <div class="desktop-reset">
+        <button type="button" class="btn" onclick="resetSessionStorage()">Reset Session</button>
       </div>
     </header>
 
@@ -989,7 +1042,7 @@
 
         <!-- Multi-Choice Comparison View (Step 4) -->
         <div id="compareView" hidden>
-          <div class="canvas-toolbar">
+          <div class="canvas-toolbar compare-toolbar">
             <span class="badge" id="compareCountBadge">Comparing Versions</span>
 
             <div class="header-group">
@@ -1001,7 +1054,7 @@
             </div>
           </div>
 
-          <p class="meta-note">Dashed outlines show the original arrangement (V1). Solid squares show the saved version on each card.</p>
+          <p class="meta-note">Dashed outlines show V1. Solid squares show the saved version.</p>
           <div id="compareGalleryGrid" class="compare-grid" role="region" aria-label="Comparison of saved versions"></div>
         </div>
       </section>
@@ -1125,6 +1178,10 @@
 
       </aside>
     </main>
+    <details class="session-actions">
+      <summary>Session options</summary>
+      <button type="button" class="btn" onclick="resetSessionStorage()">Reset Session</button>
+    </details>
   </div>
 
   <script>
@@ -1731,6 +1788,9 @@
     function exitToGate() {
       document.getElementById("workspaceShell").hidden = true;
       document.getElementById("entryGate").hidden = false;
+      for (const id of ["modeHeading", "modePicker", "changeConcept", "reviewTutorial"]) {
+        document.getElementById(id).hidden = false;
+      }
       refreshResumeButton();
       document.getElementById("modeHeading").focus();
     }
@@ -1821,6 +1881,7 @@
     function validateStep2Gate() {
       document.getElementById("toStep3Btn").disabled =
         !document.getElementById("understandingShiftField").value.trim();
+      updateMobileSteps();
     }
 
     function finishReflection(redesign) {
@@ -1834,6 +1895,83 @@
       if (!redesign) keptChoiceIdx = 0;
       goToStep(redesign ? 3 : 4);
       persistSessionState();
+    }
+
+    const mobileLayout = window.matchMedia("(max-width: 767px)");
+    const mobileProgress = document.querySelector(".mobile-progress");
+    const mobileStepList = document.getElementById("mobileStepList");
+
+    function updateMobileSteps() {
+      const reflectionReady = Boolean(document.getElementById("understandingShiftField").value.trim());
+      const availableSteps = {
+        1: true,
+        1.5: v1Locked,
+        2: v1Locked,
+        3: currentStep === 2 ? reflectionReady : Boolean(secondReflection),
+        4: currentStep === 2 ? reflectionReady && Boolean(secondReflection) : Boolean(secondReflection)
+      };
+      const activeStep = currentStep === 1.25 ? 1 : currentStep;
+      for (const button of mobileProgress.querySelectorAll("[data-step]")) {
+        const step = Number(button.dataset.step);
+        const active = step === activeStep;
+        button.disabled = !active && !availableSteps[step];
+        if (active) button.setAttribute("aria-current", "step");
+        else button.removeAttribute("aria-current");
+      }
+      const showsComparison = mode === "online" && choices.length > 1 &&
+        (currentStep !== 4 || compareRequested);
+      mobileProgress.querySelector('[data-step="4"]').textContent =
+        showsComparison ? "4. Compare & Export" : "4. Summary & Export";
+    }
+
+    function revealMobileStep() {
+      const active = mobileStepList.querySelector('[aria-current="step"]');
+      if (!mobileLayout.matches || !active) return;
+      const listBounds = mobileStepList.getBoundingClientRect();
+      const buttonBounds = active.getBoundingClientRect();
+      if (buttonBounds.left < listBounds.left || buttonBounds.right > listBounds.right) {
+        mobileStepList.scrollLeft += buttonBounds.left - listBounds.left -
+          (listBounds.width - buttonBounds.width) / 2;
+      }
+    }
+
+    mobileLayout.addEventListener("change", revealMobileStep);
+
+    function navigateMobileStep(step) {
+      const button = mobileProgress.querySelector(`[data-step="${step}"]`);
+      if (!button || button.disabled) return;
+      if (button.hasAttribute("aria-current")) {
+        if (currentStep === 1.25 && !v1Locked) goToStep(1);
+        return;
+      }
+      if (step === 4 && currentStep === 3) {
+        proceedToComparison();
+        return;
+      }
+      if (currentStep === 3 && isWorkingDraftDirty) {
+        if (!window.confirm("Leave this step and discard the unsaved arrangement?")) return;
+        discardWorkingDraft();
+      }
+      if (currentStep === 2 && step === 3) {
+        finishReflection(true);
+        return;
+      }
+      if (currentStep === 2 && step === 4) {
+        secondReflection = {
+          text: document.getElementById("understandingShiftField").value.trim(),
+          inspiration: [...inspiration]
+        };
+        proceedToComparison();
+        return;
+      }
+      if (step === 1 && v1Locked) {
+        activeChoiceIdx = 0;
+        workingSquares = clone(choices[0].squares);
+        workingPhoto = choices[0].photo || "";
+        goToStep(mode === "online" ? 1.25 : 1);
+        return;
+      }
+      goToStep(step);
     }
 
     function goToStep(stepNumber) {
@@ -1915,7 +2053,14 @@
       renderBoard();
       const heading = document.getElementById(isGallery ? "galleryTitle" : onlineCreation ? "onlineCreateTitle" : currentStep === 1.25 ? "step1Title" : `step${currentStep}Title`);
       heading.tabIndex = -1;
-      heading.focus();
+      updateMobileSteps();
+      if (mobileLayout.matches) {
+        heading.focus({ preventScroll: true });
+        window.scrollTo(0, 0);
+        revealMobileStep();
+      } else {
+        heading.focus();
+      }
     }
 
     function proceedToComparison() {
@@ -2016,6 +2161,7 @@
       isWorkingDraftDirty = false;
       updateDraftStatusUI();
       renderChoicesList();
+      updateMobileSteps();
       const saved = persistSessionState();
       document.getElementById("versionSaveStatus").textContent = saved ? `${title} saved` : `${title} added. Export to keep a copy.`;
     }
@@ -2269,6 +2415,7 @@
         keepBtn.addEventListener("click", () => {
           keptChoiceIdx = idx;
           renderCompareGallery();
+          grid.children[idx].querySelector("button").focus({ preventScroll: true });
           persistSessionState();
         });
 
@@ -2378,6 +2525,7 @@
     }
 
     function resetSessionStorage() {
+      document.querySelector(".session-actions").open = false;
       try { localStorage.removeItem(STORAGE_KEY); } catch {}
       startBlankSession();
     }
