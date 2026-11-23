@@ -720,13 +720,26 @@
     }
     .draft-actions { padding-top: 12px; border-top: 1px solid var(--border); }
     .draft-actions p { margin-top: 8px; }
+    .mode-secondary-actions { display: contents; }
+
     @media (max-width: 767px) {
       .entry-gate { min-height: 100vh; min-height: 100dvh; align-items: start; padding: 20px 16px; }
       .gate-dialog { border: 0; padding: 0; gap: 20px; }
       .gate-header h1 { font-size: 1.5rem; }
       #modePicker { grid-template-columns: 1fr; }
       #modePicker .gate-option { min-height: 80px; padding: 16px; }
-      #tutorialContinue { flex-basis: 100%; order: -1; }
+      #tutorial .action-row {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+      #tutorialContinue { grid-column: 1 / -1; }
+      #tutorialBack { grid-column: 1; }
+      #tutorialSkip { grid-column: 2; }
+      .mode-secondary-actions:has(> :not([hidden])) {
+        display: flex;
+        gap: 8px;
+      }
+      .mode-secondary-actions .btn { flex: 1; }
       .workspace-main { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 16px; padding-bottom: max(24px, env(safe-area-inset-bottom)); }
       .context-panel { min-width: 0; padding: 16px; }
       .btn, .gate-option, .choice-btn, .tilt-bar button, summary, .checkbox-row { min-height: 44px; }
@@ -831,7 +844,7 @@
       }
 
       #tutorial .btn,
-      .gate-dialog:has(#modePicker:not([hidden])) > .btn {
+      .gate-dialog:has(#modePicker:not([hidden])) .btn {
         min-height: 40px;
       }
 
@@ -979,7 +992,6 @@
       </div>
       <button type="button" id="resumeDraftBtn" class="btn" onclick="resumeDraft()" hidden>Resume Saved Session</button>
       <h2 id="modeHeading" tabindex="-1" hidden></h2>
-      <button type="button" id="changeConcept" class="btn" onclick="showConceptPicker()" hidden>Change Concept</button>
       <section id="tutorial" aria-labelledby="tutorialTitle" hidden>
         <p id="tutorialProgress" class="meta-note"></p>
         <h2 id="tutorialTitle" tabindex="-1" aria-describedby="tutorialProgress"></h2>
@@ -988,11 +1000,14 @@
           <div class="action-row">
             <button id="tutorialBack" class="btn" type="button" onclick="showTutorialStep(tutorialStep - 1)" hidden>Back</button>
             <button id="tutorialContinue" class="btn btn-primary" type="button" onclick="advanceTutorial()">Continue</button>
-            <button class="btn" type="button" onclick="closeTutorial()">Skip Tutorial</button>
+            <button id="tutorialSkip" class="btn" type="button" onclick="closeTutorial()">Skip Tutorial</button>
           </div>
         </div>
       </section>
-      <button id="reviewTutorial" type="button" class="btn" onclick="openTutorial()" hidden>View Tutorial</button>
+      <div id="modeSecondaryActions" class="mode-secondary-actions">
+        <button type="button" id="changeConcept" class="btn" onclick="showConceptPicker()" hidden>Change Concept</button>
+        <button id="reviewTutorial" type="button" class="btn" onclick="openTutorial()" hidden>View Tutorial</button>
+      </div>
       <div id="modePicker" class="gate-grid" role="group" aria-labelledby="modeHeading" hidden>
         <button type="button" class="gate-option" onclick="launchApp('online')">
           <strong>Online Solo Mode</strong>
@@ -2035,6 +2050,25 @@
     }
 
     mobileLayout.addEventListener("change", revealMobileStep);
+    mobileLayout.addEventListener("change", orderWalkthroughControls);
+
+    function orderWalkthroughControls() {
+      const previousFocus = document.activeElement;
+      const tutorialContinue = document.getElementById("tutorialContinue");
+      const tutorialBack = document.getElementById("tutorialBack");
+      const modePicker = document.getElementById("modePicker");
+      const secondaryActions = document.getElementById("modeSecondaryActions");
+
+      if (mobileLayout.matches) {
+        tutorialBack.before(tutorialContinue);
+        modePicker.after(secondaryActions);
+      } else {
+        tutorialBack.after(tutorialContinue);
+        modePicker.before(secondaryActions);
+      }
+
+      if (document.activeElement !== previousFocus) previousFocus?.focus({ preventScroll: true });
+    }
 
     function navigateMobileStep(step) {
       const button = mobileProgress.querySelector(`[data-step="${step}"]`);
@@ -2706,6 +2740,7 @@
       a.remove();
       URL.revokeObjectURL(url);
     }
+    orderWalkthroughControls();
     refreshResumeButton();
   </script>
 </body>
