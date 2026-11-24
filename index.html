@@ -720,6 +720,11 @@
       text-decoration: underline;
       text-underline-offset: .2em;
     }
+    #reflectionReferenceCard {
+      width: min(100%, 15rem);
+      margin: 8px 0;
+    }
+    #reflectionReferenceCard .clothesline-card::before { display: none; }
     .flip-art .art-back { padding: clamp(12px, 3vw, 24px); min-height: 10rem; overflow-wrap: anywhere; }
     .art-back strong { display: block; margin-bottom: 8px; }
     .card-caption { display: flex; gap: 8px; justify-content: space-between; align-items: baseline; padding-block: 10px; }
@@ -1252,8 +1257,8 @@
           <button type="button" class="btn" onclick="goToStep(1.5)">Back to Gallery</button>
           <h2 id="step2Title" class="panel-title">Reflection 2</h2>
           <details id="reflectionReference" hidden><summary>Revisit the Gallery card you marked</summary><div id="reflectionReferenceCard"></div></details>
-          <label for="understandingShiftField" id="secondReflectionPrompt">What did one Gallery arrangement help you notice about your own? Tell us what it changed or reinforced in how you see the concept.</label>
-          <textarea id="understandingShiftField" placeholder="In the Gallery, I noticed … That made me see my arrangement as …" rows="6" oninput="validateStep2Gate()"></textarea>
+          <label for="understandingShiftField" id="secondReflectionPrompt">What’s one detail the Gallery helped you notice in your own arrangement? What would you keep or try, and why?</label>
+          <textarea id="understandingShiftField" placeholder="I noticed … I would keep or try … because …" rows="6" oninput="validateStep2Gate()"></textarea>
           <div role="group" aria-labelledby="reflectionNextLabel">
             <p id="reflectionNextLabel"><strong>Choose how to continue</strong></p>
             <div class="action-row reflection-next">
@@ -1393,9 +1398,6 @@
       document.getElementById("firstReflectionPrompt").textContent = usePhoto
         ? "Why did you arrange the squares this way?"
         : "What idea or feeling did you want to show? Describe one choice you made with the squares and why.";
-      document.getElementById("secondReflectionPrompt").textContent = usePhoto
-        ? "What did the Gallery help you notice about your arrangement?"
-        : "What did one Gallery arrangement help you notice about your own? Tell us what it changed or reinforced in how you see the concept.";
       document.getElementById("createInstruction").hidden = currentStep === 1.25;
       document.getElementById("createInstruction").textContent = usePhoto
         ? `Add your four-square arrangement for ${selectedConcept}.`
@@ -1715,10 +1717,15 @@
     function renderReflectionReference() {
       const details = document.getElementById("reflectionReference");
       const container = document.getElementById("reflectionReferenceCard");
-      details.open = false;
-      details.hidden = mode !== "online" || !galleryExamples[selectedConcept]?.[markedSample];
+      const hasSavedCard = mode === "online" && Boolean(galleryExamples[selectedConcept]?.[markedSample]);
+      details.hidden = !hasSavedCard;
+      details.open = hasSavedCard;
       container.replaceChildren();
-      if (!details.hidden) container.append(gallerySampleCard(markedSample));
+      if (hasSavedCard) container.append(gallerySampleCard(markedSample));
+
+      document.getElementById("secondReflectionPrompt").textContent = hasSavedCard
+        ? "Look at your arrangement and the card you saved. What’s one difference you notice? What would you keep or try in your own arrangement, and why?"
+        : "What’s one detail the Gallery helped you notice in your own arrangement? What would you keep or try, and why?";
     }
 
     function renderGallerySamples() {
