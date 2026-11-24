@@ -1068,7 +1068,6 @@
       <div class="header-group workspace-top-row">
         <div class="header-group workspace-actions">
           <button type="button" class="btn" onclick="openTutorial()">Tutorial</button>
-          <button type="button" class="btn" onclick="exitToGate()">Switch Mode</button>
         </div>
         <div class="header-group workspace-status" role="group" aria-label="Current concept and mode">
           <span id="conceptIndicator" class="badge"></span>
@@ -1956,16 +1955,6 @@
         : "In-Person Assist";
       startBlankSession();
 
-    }
-
-    function exitToGate() {
-      document.getElementById("workspaceShell").hidden = true;
-      document.getElementById("entryGate").hidden = false;
-      for (const id of ["modeHeading", "modePicker", "changeConcept", "reviewTutorial"]) {
-        document.getElementById(id).hidden = false;
-      }
-      refreshResumeButton();
-      document.getElementById("modeHeading").focus();
     }
 
     function startBlankSession() {
