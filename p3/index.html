@@ -547,6 +547,52 @@
       gap: var(--space-3);
     }
 
+    .context-panel.exploration-review-screen {
+      grid-column: 1 / -1;
+      width: min(100%, 68rem);
+      min-width: 0;
+      justify-self: center;
+    }
+
+    #explorationReviewTitle { font-size: clamp(1.35rem, 3vw, 1.9rem); }
+
+    .exploration-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .exploration-grid li { min-width: 0; }
+    .exploration-grid .canvas-frame { display: block; border: 1px solid var(--border); }
+    .exploration-grid .square-node { cursor: inherit; }
+    .exploration-option {
+      display: grid;
+      gap: 8px;
+      width: 100%;
+      text-align: left;
+    }
+    .exploration-option[aria-pressed="true"] {
+      border-color: var(--text);
+      box-shadow: inset 0 0 0 1px var(--text);
+      background: #eef2f7;
+    }
+    .exploration-option[aria-pressed="true"] .canvas-frame { border-color: var(--text); }
+    #explorationProgress { border-top: 1px solid var(--border); padding-top: var(--space-3); }
+    #explorationProgress .exploration-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    #explorationProgress li { display: grid; gap: 5px; }
+    #explorationReview textarea { width: 100%; }
+    #explorationReflect { align-self: flex-start; }
+
+    @media (min-width: 1024px) {
+      #explorationList { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    }
+    @media (max-width: 479px) {
+      #explorationList { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
     .panel-title {
       font-size: 1rem;
       font-weight: 700;
@@ -768,14 +814,11 @@
       display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px;
       border-top: 1px solid var(--border);
     }
-    .mode-secondary-actions { display: contents; }
 
     @media (max-width: 767px) {
       .entry-gate { min-height: 100vh; min-height: 100dvh; align-items: start; padding: 20px 16px; }
       .gate-dialog { border: 0; padding: 0; gap: 20px; }
       .gate-header h1 { font-size: 1.5rem; }
-      #modePicker { grid-template-columns: 1fr; }
-      #modePicker .gate-option { min-height: 80px; padding: 16px; }
       #tutorial .action-row {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -783,12 +826,6 @@
       #tutorialContinue { grid-column: 1 / -1; }
       #tutorialBack { grid-column: 1; }
       #tutorialSkip { grid-column: 2; }
-      .mode-secondary-actions:has(> :not([hidden])) {
-        display: flex;
-        gap: 8px;
-      }
-      .mode-secondary-actions .btn { flex: 1; }
-      .workspace-main { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 16px; padding-bottom: max(24px, env(safe-area-inset-bottom)); }
       .context-panel { min-width: 0; padding: 16px; }
       .btn, .gate-option, .choice-btn, .tilt-bar button, summary, .checkbox-row { min-height: 44px; }
       .btn { white-space: normal; }
@@ -890,51 +927,7 @@
         font-size: clamp(1rem, 1.35vw, 1.125rem);
       }
 
-      #tutorial .btn,
-      .gate-dialog:has(#modePicker:not([hidden])) .btn {
-        min-height: 40px;
-      }
-
-      .gate-dialog:has(#modePicker:not([hidden])) {
-        display: grid;
-        grid-template-columns: max-content max-content minmax(0, 1fr);
-        gap: 16px 8px;
-        align-items: start;
-      }
-
-      .gate-dialog:has(#modePicker:not([hidden])) .gate-header,
-      #modeHeading,
-      #modePicker {
-        grid-column: 1 / -1;
-      }
-
-      .gate-dialog:has(#modePicker:not([hidden])) #resumeDraftBtn {
-        grid-column: 1 / -1;
-        justify-self: start;
-      }
-
-      #modeHeading {
-        font-size: clamp(1.75rem, 2.9vw, 2.75rem);
-        line-height: 1.15;
-        letter-spacing: -.025em;
-      }
-
-      #modePicker {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: clamp(12px, 2vw, 24px);
-        padding: clamp(16px, 3vw, 36px);
-        border-radius: 20px;
-        background: #f5f7fb;
-      }
-
-      #modePicker .gate-option {
-        min-height: 128px;
-        justify-content: center;
-        padding: clamp(16px, 2vw, 24px);
-      }
-
-      #modePicker .gate-option strong { font-size: 1.125rem; }
-      #modePicker .gate-option span { font-size: .9375rem; }
+      #tutorial .btn { min-height: 40px; }
 
       .gate-dialog:has(#conceptPicker:not([hidden])) {
         display: grid;
@@ -1038,7 +1031,6 @@
         <button type="button" class="gate-option concept-bubble" onclick="chooseConcept(this)">Order</button>
       </div>
       <button type="button" id="resumeDraftBtn" class="btn" onclick="resumeDraft()" hidden>Resume Saved Session</button>
-      <h2 id="modeHeading" tabindex="-1" hidden></h2>
       <section id="tutorial" aria-labelledby="tutorialTitle" hidden>
         <p id="tutorialProgress" class="meta-note"></p>
         <h2 id="tutorialTitle" tabindex="-1" aria-describedby="tutorialProgress"></h2>
@@ -1051,21 +1043,6 @@
           </div>
         </div>
       </section>
-      <div id="modeSecondaryActions" class="mode-secondary-actions">
-        <button type="button" id="changeConcept" class="btn" onclick="showConceptPicker()" hidden>Change Concept</button>
-        <button id="reviewTutorial" type="button" class="btn" onclick="openTutorial()" hidden>View Tutorial</button>
-      </div>
-      <div id="modePicker" class="gate-grid" role="group" aria-labelledby="modeHeading" hidden>
-        <button type="button" class="gate-option" onclick="launchApp('online')">
-          <strong>Online Solo Mode</strong>
-          <span>Arrange four squares on a digital canvas.</span>
-        </button>
-
-        <button type="button" class="gate-option" onclick="launchApp('inperson')">
-          <strong>In-Person Assist</strong>
-          <span>Upload a photo of your physical composition.</span>
-        </button>
-      </div>
     </section>
   </main>
 
@@ -1243,12 +1220,20 @@
           <p id="onlineCreateHint"></p>
           <button type="button" class="btn btn-primary" onclick="saveExploration()">Save &amp; Continue</button>
           <p id="explorationStatus" class="meta-note" role="status" hidden></p>
+          <section id="explorationProgress" class="panel-group" aria-labelledby="explorationCount" hidden>
+            <h3 id="explorationCount" class="panel-title" aria-live="polite"></h3>
+            <ol id="explorationThumbnails" class="exploration-grid"></ol>
+          </section>
         </section>
         <section id="explorationReview" class="panel-group" aria-labelledby="explorationReviewTitle" hidden>
-          <h2 id="explorationReviewTitle" class="panel-title">Choose an Arrangement to Revisit</h2>
-          <p>Preview your arrangements, then choose one to reflect on.</p>
-          <ul id="explorationList" class="choices-list" aria-label="Your saved arrangements"></ul>
-          <button type="button" id="explorationReflect" class="btn btn-primary" onclick="goToStep(1.25)" disabled>Continue to Reflection</button>
+          <h2 id="explorationReviewTitle">Choose the Arrangement That Best Expresses Your Concept</h2>
+          <p id="explorationReviewPrompt"></p>
+          <ul id="explorationList" class="exploration-grid" aria-label="Your saved arrangements"></ul>
+          <div id="explorationReasonGroup" class="panel-group" hidden>
+            <label id="explorationReasonLabel" for="explorationReason"></label>
+            <textarea id="explorationReason" placeholder="I chose this arrangement because…" oninput="saveExplorationReason()"></textarea>
+          </div>
+          <button type="button" id="explorationReflect" class="btn btn-primary" onclick="lockBaselineV1()" disabled>Save &amp; Open Gallery</button>
         </section>
         <section id="inPersonCreatePanel" class="panel-group" aria-labelledby="inPersonCreateTitle" hidden>
           <h2 id="inPersonCreateTitle" class="panel-title">Add Your Composition</h2>
@@ -1934,7 +1919,7 @@
     let tutorialStep = 0;
     const tutorialPages = [
       ["Express a concept", "Use exactly four squares to communicate the concept you chose. Start with one spatial choice: change the gaps, align the edges, overlap two squares, or rotate one. Think about how that choice changes the feeling."],
-      ["Create your first composition", "Online, drag a square or focus it with Tab and use the arrow keys to move it. Press R to rotate. In person, arrange four physical squares, then use Take Photo on your phone or Choose Photo or PDF to select an existing image or PDF."],
+      ["Create your first composition", "Drag a square to move it. With a keyboard, use Tab to focus a square, the arrow keys to move it, and R to rotate it."],
       ["Record your own interpretation", "Before opening the Gallery, look back at your work and write why you placed the squares that way. The arrangement you reflect on becomes V1."],
       ["Reflect after the Gallery", "Flip Gallery cards to see how others interpreted the same concept. Then record what changed or stayed the same in your understanding. You can finish with V1 or save a new version."]
     ];
@@ -1948,7 +1933,7 @@
       document.getElementById("tutorialBody").textContent = body;
       document.getElementById("tutorialBack").hidden = index === 0;
       document.getElementById("tutorialContinue").textContent = index === tutorialPages.length - 1
-        ? (tutorialFromWorkspace ? "Return to Workspace" : "Choose Participation Mode")
+        ? (tutorialFromWorkspace ? "Return to Workspace" : "Start Creating")
         : "Continue";
       heading.focus();
     }
@@ -1963,9 +1948,7 @@
       tutorialFromWorkspace = !shell.hidden;
       shell.hidden = true;
       document.getElementById("entryGate").hidden = false;
-      for (const id of ["modeHeading", "modePicker", "changeConcept", "reviewTutorial", "resumeDraftBtn"]) {
-        document.getElementById(id).hidden = true;
-      }
+      document.getElementById("resumeDraftBtn").hidden = true;
       document.getElementById("tutorial").hidden = false;
       showTutorialStep(0);
     }
@@ -1977,33 +1960,14 @@
         document.getElementById("workspaceShell").hidden = false;
         document.querySelector('#workspaceShell [onclick="openTutorial()"]').focus();
       } else {
-        for (const id of ["modeHeading", "modePicker", "changeConcept", "reviewTutorial"]) {
-          document.getElementById(id).hidden = false;
-        }
-        refreshResumeButton();
-        document.getElementById("modeHeading").focus();
+        launchApp("online");
       }
     }
 
     function chooseConcept(button) {
       selectedConcept = button.textContent.trim();
       document.getElementById("conceptPicker").hidden = true;
-      document.getElementById("modePicker").hidden = false;
-      document.getElementById("changeConcept").hidden = false;
-      const heading = document.getElementById("modeHeading");
-      heading.textContent = selectedConcept + " — Choose how to participate";
-      heading.hidden = false;
       openTutorial();
-    }
-
-    function showConceptPicker() {
-      document.getElementById("reviewTutorial").hidden = true;
-      document.getElementById("modePicker").hidden = true;
-      document.getElementById("modeHeading").hidden = true;
-      document.getElementById("changeConcept").hidden = true;
-      document.getElementById("conceptPicker").hidden = false;
-      const bubbles = [...document.querySelectorAll(".concept-bubble")];
-      (bubbles.find(button => button.textContent.trim() === selectedConcept) || bubbles[0]).focus();
     }
 
     function launchApp(selectedMode) {
@@ -2064,6 +2028,7 @@
 
       document.getElementById("goalField").value = "";
       document.getElementById("goalField").readOnly = false;
+      document.getElementById("explorationReason").value = "";
       document.getElementById("nextField").value = "";
       document.getElementById("nextField").readOnly = false;
       document.getElementById("understandingShiftField").value = "";
@@ -2102,45 +2067,87 @@
       }
     }
 
+    function explorationThumbnail(squares) {
+      const preview = document.createElement("span");
+      preview.className = "canvas-frame";
+      preview.setAttribute("aria-hidden", "true");
+      squares.forEach(({x, y, rot}) => {
+        const tile = document.createElement("span");
+        tile.className = "square-node";
+        tile.style.left = x + "%";
+        tile.style.top = y + "%";
+        tile.style.transform = `rotate(${rot}deg)`;
+        preview.append(tile);
+      });
+      return preview;
+    }
+
+    function renderExplorationProgress() {
+      const count = explorations.length;
+      document.getElementById("explorationProgress").hidden = count === 0;
+      document.getElementById("explorationCount").textContent =
+        count + (count === 1 ? " arrangement saved" : " arrangements saved");
+      document.getElementById("explorationThumbnails").replaceChildren(...explorations.map((squares, index) => {
+        const item = document.createElement("li");
+        const caption = document.createElement("span");
+        caption.className = "meta-note";
+        caption.textContent = "Arrangement " + (index + 1);
+        item.append(explorationThumbnail(squares), caption);
+        return item;
+      }));
+    }
+
     function renderExplorationReview() {
       const list = document.getElementById("explorationList");
+      const reason = document.getElementById("explorationReason");
+      document.getElementById("explorationReviewPrompt").textContent =
+        `Compare your arrangements. Which one best shows ${selectedConcept.toLowerCase()}?`;
+      document.getElementById("explorationReasonLabel").textContent =
+        `Why did you choose this arrangement to show ${selectedConcept.toLowerCase()}? Point to a detail such as a gap, angle, or overlap.`;
+      reason.value = document.getElementById("goalField").value;
+      document.getElementById("explorationReasonGroup").hidden = reviewedArrangement === null;
       list.replaceChildren();
       explorations.forEach((squares, index) => {
         const item = document.createElement("li");
         const button = document.createElement("button");
+        const caption = document.createElement("span");
         button.type = "button";
-        button.className = "choice-btn";
-        button.textContent = "Arrangement " + (index + 1);
+        button.className = "btn exploration-option";
+        caption.textContent = "Arrangement " + (index + 1);
+        button.append(explorationThumbnail(squares), caption);
         button.setAttribute("aria-pressed", String(index === reviewedArrangement));
-        if (index === reviewedArrangement) button.setAttribute("aria-current", "true");
         button.addEventListener("click", () => {
-          if (reviewedArrangement !== index) {
-            document.getElementById("goalField").value = "";
-            document.getElementById("nextField").value = "";
-          }
+          if (reviewedArrangement !== index) document.getElementById("goalField").value = "";
           reviewedArrangement = index;
           workingSquares = clone(squares);
           renderExplorationReview();
-          validateStep1Gate();
-          renderBoard();
           list.children[index].firstElementChild.focus({ preventScroll: true });
           persistSessionState();
         });
         item.appendChild(button);
         list.appendChild(item);
       });
-      document.getElementById("explorationReflect").disabled = reviewedArrangement === null;
+      validateStep1Gate();
+    }
+
+    function saveExplorationReason() {
+      document.getElementById("goalField").value = document.getElementById("explorationReason").value;
+      validateStep1Gate();
+      persistSessionState();
     }
 
     function validateStep1Gate() {
       document.getElementById("inPersonReflectBtn").disabled = !workingPhoto;
       const hasGoal = document.getElementById("goalField").value.trim().length > 0;
       document.getElementById("lockV1Btn").disabled = !hasGoal || (mode === "inperson" && !workingPhoto);
+      document.getElementById("explorationReflect").disabled = reviewedArrangement === null || !hasGoal;
     }
 
     function lockBaselineV1() {
       if (!v1Locked) {
-        if (document.getElementById("lockV1Btn").disabled) return;
+        if (currentStep === 1.1
+          ? document.getElementById("explorationReflect").disabled
+          : document.getElementById("lockV1Btn").disabled) return;
         firstReflection = {
           text: document.getElementById("goalField").value.trim(),
           next: document.getElementById("nextField").value.trim()
@@ -2236,16 +2243,8 @@
       const previousFocus = document.activeElement;
       const tutorialContinue = document.getElementById("tutorialContinue");
       const tutorialBack = document.getElementById("tutorialBack");
-      const modePicker = document.getElementById("modePicker");
-      const secondaryActions = document.getElementById("modeSecondaryActions");
-
-      if (mobileLayout.matches) {
-        tutorialBack.before(tutorialContinue);
-        modePicker.after(secondaryActions);
-      } else {
-        tutorialBack.after(tutorialContinue);
-        modePicker.before(secondaryActions);
-      }
+      if (mobileLayout.matches) tutorialBack.before(tutorialContinue);
+      else tutorialBack.after(tutorialContinue);
 
       if (document.activeElement !== previousFocus) previousFocus?.focus({ preventScroll: true });
     }
@@ -2321,10 +2320,12 @@
       const isSummary = currentStep === 4 && !isCompare;
       const isCreation = currentStep === 1;
       const onlineCreation = !inPerson && isCreation;
-      document.getElementById("stageSection").hidden = isGallery || isSummary;
+      const isReview = !inPerson && currentStep === 1.1;
+      document.getElementById("stageSection").hidden = isGallery || isSummary || isReview;
+      document.getElementById("contextPanel").classList.toggle("exploration-review-screen", isReview);
       document.getElementById("onlineCreatePanel").hidden = !onlineCreation;
       document.getElementById("explorationStatus").hidden = true;
-      const isReview = !inPerson && currentStep === 1.1;
+      if (onlineCreation) renderExplorationProgress();
       document.getElementById("explorationReview").hidden = !isReview;
       if (isReview) renderExplorationReview();
       document.getElementById("onlineCreateTitle").textContent =
@@ -2834,8 +2835,7 @@
       const draft = readDraft();
       if (!draft) return;
       selectedConcept = draft.concept;
-      chooseConcept({ textContent: selectedConcept });
-      closeTutorial();
+      document.getElementById("conceptPicker").hidden = true;
       launchApp(draft.participationMode);
       choices = draft.versionsHistory;
       explorations = draft.explorations || [];
