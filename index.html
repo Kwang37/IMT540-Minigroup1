@@ -721,7 +721,7 @@
       text-underline-offset: .2em;
     }
     #reflectionReferenceCard {
-      width: min(100%, 15rem);
+      width: min(100%, 12rem);
       margin: 8px 0;
     }
     #reflectionReferenceCard .clothesline-card::before { display: none; }
@@ -742,8 +742,24 @@
       outline: 2px solid var(--accent);
       outline-offset: -2px;
     }
-    .draft-actions { padding-top: 12px; border-top: 1px solid var(--border); }
-    .draft-actions p { margin-top: 8px; }
+    #panelStep2 { gap: 20px; }
+    .reflection-heading {
+      display: flex; flex-wrap: wrap; justify-content: space-between;
+      align-items: center; gap: 8px 16px;
+    }
+    .reflection-question { display: grid; gap: 8px; }
+    .reflection-question label { margin: 0; line-height: 1.4; }
+    .reflection-next {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
+    }
+    .reflection-link {
+      min-height: 44px; padding: 4px 0; border: 0; background: none;
+      color: var(--accent); text-decoration: underline; text-underline-offset: .2em;
+    }
+    .draft-actions {
+      display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px;
+      border-top: 1px solid var(--border);
+    }
     .mode-secondary-actions { display: contents; }
 
     @media (max-width: 767px) {
@@ -773,7 +789,6 @@
       .reflection-screen #board { width: min(100%, 280px); margin-inline: auto; }
       .tilt-bar { position: static; transform: none; margin-top: 10px; justify-content: space-between; }
       .tilt-bar button { min-width: 44px; }
-      .reflection-next > .btn { flex: 1 0 100%; }
       .compare-grid, .journey-grid { grid-template-columns: minmax(0, 1fr); }
       .compare-item { min-width: 0; }
       .compare-item-head { flex-wrap: wrap; }
@@ -1254,22 +1269,27 @@
 
         <!-- STEP 2 PANEL -->
         <section id="panelStep2" class="panel-group" aria-labelledby="step2Title" hidden>
-          <button type="button" class="btn" onclick="goToStep(1.5)">Back to Gallery</button>
-          <h2 id="step2Title" class="panel-title">Reflection 2</h2>
-          <details id="reflectionReference" hidden><summary>Revisit the Gallery card you marked</summary><div id="reflectionReferenceCard"></div></details>
-          <label for="understandingShiftField" id="secondReflectionPrompt">What’s one detail the Gallery helped you notice in your own arrangement? What would you keep or try, and why?</label>
-          <textarea id="understandingShiftField" placeholder="I noticed … I would keep or try … because …" rows="6" oninput="validateStep2Gate()"></textarea>
-          <div role="group" aria-labelledby="reflectionNextLabel">
-            <p id="reflectionNextLabel"><strong>Choose how to continue</strong></p>
-            <div class="action-row reflection-next">
-              <button type="button" id="keepFirstBtn" class="btn btn-primary" onclick="finishReflection(false)">Keep First Arrangement &amp; View Summary</button>
-              <button type="button" id="toStep3Btn" class="btn btn-primary" onclick="finishReflection(true)" disabled>Continue to a New Arrangement</button>
-            </div>
+          <div class="reflection-heading">
+            <h2 id="step2Title" class="panel-title">Reflection 2</h2>
+            <button type="button" class="btn reflection-link" onclick="goToStep(1.5)">Back to Gallery</button>
+          </div>
+          <details id="reflectionReference" hidden>
+            <summary>Saved example</summary>
+            <div id="reflectionReferenceCard"></div>
+          </details>
+          <div class="reflection-question">
+            <label for="understandingShiftField" id="secondReflectionPrompt">What did the Gallery help you notice?</label>
+            <p id="reflectionCue" class="meta-note">What would you keep or try in your arrangement, and why?</p>
+            <textarea id="understandingShiftField" aria-describedby="reflectionCue" rows="4" oninput="validateStep2Gate()"></textarea>
+          </div>
+          <div class="reflection-next" role="group" aria-label="Next step">
+            <button type="button" id="keepFirstBtn" class="btn" onclick="finishReflection(false)" disabled>Keep original</button>
+            <button type="button" id="toStep3Btn" class="btn" onclick="finishReflection(true)" disabled>Try a variation</button>
           </div>
           <div class="draft-actions">
-            <button type="button" class="btn" onclick="saveReflectionDraft()" aria-describedby="draftHint">Save Draft for Later</button>
-            <p id="draftHint" class="meta-note">Saves your notes in this browser and keeps you on this page.</p>
-            <p id="draftStatus" role="status"></p>
+            <button type="button" class="btn reflection-link" onclick="saveReflectionDraft()" aria-describedby="draftHint">Save draft</button>
+            <span id="draftHint" class="sr-only">Saves your notes in this browser.</span>
+            <p id="draftStatus" class="meta-note" role="status"></p>
           </div>
         </section>
 
@@ -1724,8 +1744,8 @@
       if (hasSavedCard) container.append(gallerySampleCard(markedSample));
 
       document.getElementById("secondReflectionPrompt").textContent = hasSavedCard
-        ? "Look at your arrangement and the card you saved. What’s one difference you notice? What would you keep or try in your own arrangement, and why?"
-        : "What’s one detail the Gallery helped you notice in your own arrangement? What would you keep or try, and why?";
+        ? "What’s one difference between your arrangement and the saved example?"
+        : "What did the Gallery help you notice?";
     }
 
     function renderGallerySamples() {
@@ -2023,8 +2043,9 @@
     }
 
     function validateStep2Gate() {
-      document.getElementById("toStep3Btn").disabled =
-        !document.getElementById("understandingShiftField").value.trim();
+      const hasResponse = Boolean(document.getElementById("understandingShiftField").value.trim());
+      document.getElementById("keepFirstBtn").disabled = !hasResponse;
+      document.getElementById("toStep3Btn").disabled = !hasResponse;
       updateMobileSteps();
     }
 
@@ -2634,7 +2655,7 @@
 
     function saveReflectionDraft() {
       document.getElementById("draftStatus").textContent = persistSessionState()
-        ? "Draft saved. Choose an option above when you’re ready to continue."
+        ? "Draft saved in this browser."
         : "Browser storage unavailable or full. Export a session copy from the final step.";
     }
 
