@@ -701,6 +701,25 @@
     .clothesline-card:nth-child(3n + 1) { --hang: -1.2deg; }
     .clothesline-card:nth-child(3n + 2) { --hang: .7deg; }
     .flip-art > span { display: block; }
+    .flip-art .flip-hint {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      padding: 8px 12px;
+      border-top: 1px solid #d9d3c8;
+      border-radius: 0 0 3px 3px;
+      background: var(--bg);
+      color: var(--accent);
+      font-size: .8125rem;
+      font-weight: 600;
+      text-align: center;
+    }
+    .flip-art:hover .flip-hint, .flip-art:focus-visible .flip-hint {
+      background: var(--accent-soft);
+      text-decoration: underline;
+      text-underline-offset: .2em;
+    }
     .flip-art .art-back { padding: clamp(12px, 3vw, 24px); min-height: 10rem; overflow-wrap: anywhere; }
     .art-back strong { display: block; margin-bottom: 8px; }
     .card-caption { display: flex; gap: 8px; justify-content: space-between; align-items: baseline; padding-block: 10px; }
@@ -1642,10 +1661,14 @@
       const explanation = document.createElement("span");
       explanation.textContent = reading;
       back.append(heading, explanation);
-      button.append(front, back);
+      const hint = document.createElement("span");
+      hint.className = "flip-hint";
+      hint.setAttribute("aria-hidden", "true");
+      button.append(front, back, hint);
       const updateSide = flipped => {
         front.hidden = flipped;
         back.hidden = !flipped;
+        hint.textContent = flipped ? "Back to composition" : "Flip to read interpretation";
         button.setAttribute("aria-expanded", String(flipped));
         button.setAttribute("aria-label", flipped ? `Show composition: ${title}` : `Read interpretation: ${title}`);
         button.setAttribute("aria-description", flipped ? reading : front.getAttribute("aria-label"));
