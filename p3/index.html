@@ -809,7 +809,38 @@
     }
     .workspace-actions .workspace-tutorial:hover { background: #f4f7fb; color: var(--text); }
     .touch-hint { display: none; }
+    #board.is-editable { touch-action: none; }
     #board.is-editable .square-node { touch-action: none; -webkit-touch-callout: none; }
+    .square-resize-handle { display: none; }
+    @media (any-pointer: fine) {
+      #board.is-editable .square-node[aria-pressed="true"] { z-index: 1; }
+      #board.is-editable .square-node[aria-pressed="true"] .square-resize-handle {
+        display: grid;
+        place-items: center;
+        position: absolute;
+        bottom: 0;
+        right: 0;
+        width: 20px;
+        height: 20px;
+        cursor: nwse-resize;
+      }
+      .square-resize-handle::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: var(--bg);
+        border: 1px solid var(--accent);
+        border-radius: 1px;
+      }
+    }
+    .square-size-controls .corner-hint {
+      font-size: .8rem;
+      color: var(--text-muted);
+    }
+    @media (pointer: coarse) { .corner-hint { display: none; } }
+    @media (pointer: coarse) and (min-width: 768px) {
+      .board-surface:has(.is-editable) .touch-hint { display: block; margin-bottom: 8px; font-size: .875rem; }
+    }
     button, summary, .checkbox-row { touch-action: manipulation; }
     .btn:active:not(:disabled), .gate-option:active, .tilt-bar button:active {
       outline: 2px solid var(--accent);
@@ -1027,6 +1058,7 @@
         align-self: start;
       }
     }
+      @media (pointer: fine) { .board-surface:has(.is-editable) .touch-hint { display: none; } }
   </style>
 </head>
 <body>
@@ -1162,7 +1194,7 @@
           </div>
 
           <div class="board-surface">
-            <p class="touch-hint">Tap to select a square. Drag to move it, or use the controls to resize and rotate it.</p>
+            <p class="touch-hint">Drag a square with one finger. To resize it, start on the square and pinch with two fingers.</p>
           <div
             id="board"
             class="canvas-frame"
@@ -1183,6 +1215,7 @@
               <button type="button" id="shrinkSquare" class="btn" onclick="resizeActiveSquare(-1)" aria-label="Make selected square smaller">−</button>
               <output id="squareSizeReadout" aria-label="Side length as a percentage of the board"></output>
               <button type="button" id="growSquare" class="btn" onclick="resizeActiveSquare(1)" aria-label="Make selected square larger">+</button>
+              <span class="corner-hint">Drag the corner to resize.</span>
             </div>
 
           </div>
@@ -1959,8 +1992,12 @@
     }
 
     function resizeSquare(square, direction) {
+      setSquareSize(square, squareSize(square) + direction * SQUARE_SIZE_STEP);
+    }
+
+    function setSquareSize(square, targetSize) {
       const oldSize = squareSize(square);
-      const size = Math.max(MIN_SQUARE_SIZE, Math.min(MAX_SQUARE_SIZE, oldSize + direction * SQUARE_SIZE_STEP));
+      const size = Math.max(MIN_SQUARE_SIZE, Math.min(MAX_SQUARE_SIZE, Math.round(targetSize * 10) / 10));
       if (size === oldSize) return;
       const shift = (oldSize - size) / 2;
       square.size = size;
@@ -2590,8 +2627,10 @@
           btn.type = "button";
           btn.className = "square-node";
           btn.textContent = `#${sq.id}`;
-          btn.addEventListener("pointerdown", (e) => startPointerDrag(e, sq.id));
-          btn.addEventListener("lostpointercapture", (e) => finishPointerDrag(e, true));
+          const resizeHandle = document.createElement("span");
+          resizeHandle.className = "square-resize-handle";
+          resizeHandle.setAttribute("aria-hidden", "true");
+          btn.append(resizeHandle);
           btn.addEventListener("contextmenu", (e) => { if (canModifyBoard()) e.preventDefault(); });
           btn.addEventListener("click", (e) => {
             if (e.detail === 0 && canModifyBoard()) {
@@ -2620,53 +2659,88 @@
       return (currentStep === 1 && !v1Locked) || (currentStep === 3 && !workingPhoto);
     }
 
-    function startPointerDrag(e, id) {
-      if (!e.isPrimary || e.button !== 0 || squareGesture || !canModifyBoard()) return;
-      const square = workingSquares.find(s => s.id === id);
-      const { width, height } = document.getElementById("board").getBoundingClientRect();
-      if (!square || !width || !height) return;
-      e.preventDefault();
-      squareGesture = { id: e.pointerId, button: e.currentTarget, square, width, height, x: e.clientX, y: e.clientY, moved: false };
-      e.currentTarget.setPointerCapture(e.pointerId);
+    const gestureBoard = document.getElementById("board");
+
+    function pointerDistance(points) {
+      const [a, b] = points.values();
+      return Math.hypot(a.x - b.x, a.y - b.y);
     }
 
-    function gesturePosition(e, g) {
-      const dx = e.clientX - g.x, dy = e.clientY - g.y;
-      if (!g.moved && Math.hypot(dx, dy) <= 5) return null;
-      g.moved = true;
-      return fitSquare(g.square, g.square.x + Math.round(dx * 100 / g.width),
-        g.square.y + Math.round(dy * 100 / g.height));
-    }
-
-    window.addEventListener("pointermove", (e) => {
-      const g = squareGesture;
-      if (!g || e.pointerId !== g.id || !canModifyBoard()) return;
-      const pos = gesturePosition(e, g);
-      if (pos) {
-        g.button.style.left = pos.x + "%";
-        g.button.style.top = pos.y + "%";
+    gestureBoard.addEventListener("pointerdown", e => {
+      if (!canModifyBoard() || e.button !== 0) return;
+      const point = { x: e.clientX, y: e.clientY };
+      if (squareGesture) {
+        const gesture = squareGesture;
+        if (e.pointerType !== "touch" || gesture.pointerType !== "touch" || gesture.points.size !== 1) return;
+        e.preventDefault();
+        gesture.points.set(e.pointerId, point);
+        gesture.kind = "pinch";
+        gesture.pinchBase = clone(gesture.preview);
+        gesture.distance = Math.max(8, pointerDistance(gesture.points));
+        gesture.button.setPointerCapture(e.pointerId);
+        return;
       }
+
+      const button = e.target.closest("button.square-node");
+      const square = workingSquares.find(sq => squareButtonMap.get(sq.id) === button);
+      if (!square || !gestureBoard.clientWidth || !gestureBoard.clientHeight) return;
+      const corner = e.pointerType !== "touch" && e.target.classList.contains("square-resize-handle");
+      e.preventDefault();
+      activeSquareId = square.id;
+      squareGesture = {
+        kind: corner ? "corner" : "move", pointerType: e.pointerType, square, button,
+        origin: point, points: new Map([[e.pointerId, point]]), preview: clone(square),
+        width: gestureBoard.clientWidth, height: gestureBoard.clientHeight, moved: false
+      };
+      button.setPointerCapture(e.pointerId);
+      renderBoard();
     });
 
-    function finishPointerDrag(e, canceled = false) {
+    function updateSquareGesture(e) {
       const g = squareGesture;
-      if (!g || e.pointerId !== g.id) return;
-      squareGesture = null;
-      if (g.button.hasPointerCapture(g.id)) g.button.releasePointerCapture(g.id);
-      if (!canceled && canModifyBoard() && workingSquares.includes(g.square)) {
-        const pos = gesturePosition(e, g);
-        if (pos) {
-          Object.assign(g.square, pos);
-          updateDraftStatusUI();
+      if (!g?.points.has(e.pointerId) || !canModifyBoard() || !workingSquares.includes(g.square)) return;
+      g.points.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const preview = clone(g.kind === "pinch" ? g.pinchBase : g.square);
+      if (g.kind === "pinch") {
+        setSquareSize(preview, squareSize(g.pinchBase) * pointerDistance(g.points) / g.distance);
+      } else {
+        const dx = e.clientX - g.origin.x, dy = e.clientY - g.origin.y;
+        if (!g.moved && Math.hypot(dx, dy) <= (g.kind === "corner" ? 1 : 5)) return;
+        g.moved = true;
+        if (g.kind === "corner") {
+          const diagonal = (g.square.rot + 45) * Math.PI / 180;
+          const projected = dx * 100 / g.width * Math.cos(diagonal) + dy * 100 / g.height * Math.sin(diagonal);
+          setSquareSize(preview, squareSize(g.square) + projected * Math.SQRT2);
+        } else {
+          Object.assign(preview, fitSquare(g.square, g.square.x + Math.round(dx * 100 / g.width),
+            g.square.y + Math.round(dy * 100 / g.height)));
         }
-        activeSquareId = g.square.id;
-        if (e.pointerType === "mouse") g.button.focus({ preventScroll: true });
+      }
+      g.preview = preview;
+      placeSquare(g.button, preview);
+      if (g.kind !== "move") document.getElementById("squareSizeReadout").value = squareSize(preview) + "%";
+    }
+
+    function finishSquareGesture(e, canceled = false) {
+      const g = squareGesture;
+      if (!g?.points.has(e.pointerId)) return;
+      if (!canceled && canModifyBoard() && workingSquares.includes(g.square)) {
+        updateSquareGesture(e);
+        Object.assign(g.square, g.preview);
+        updateDraftStatusUI();
+        if (g.pointerType === "mouse") g.button.focus({ preventScroll: true });
+      }
+      squareGesture = null;
+      for (const id of g.points.keys()) {
+        if (g.button.hasPointerCapture(id)) g.button.releasePointerCapture(id);
       }
       renderBoard();
     }
 
-    window.addEventListener("pointerup", (e) => finishPointerDrag(e));
-    window.addEventListener("pointercancel", (e) => finishPointerDrag(e, true));
+    window.addEventListener("pointermove", updateSquareGesture);
+    window.addEventListener("pointerup", e => finishSquareGesture(e));
+    window.addEventListener("pointercancel", e => finishSquareGesture(e, true));
+    gestureBoard.addEventListener("lostpointercapture", e => finishSquareGesture(e, true));
 
     function handleSquareKeydown(e, id) {
       const sq = workingSquares.find(s => s.id === id);
