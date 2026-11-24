@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="Create four-square arrangements, explore a gallery, and revisit one of your designs.">
+<title>4SQUARES Workspace | P3 Demo</title>
+<style>
+:root{font:16px/1.55 system-ui,sans-serif;color:#17213a;background:#f8f8fc;--ink:#17213a;--muted:#505a71;--line:#dce0eb;--accent:#423586;--soft:#eeebfb;--white:#fff}
+*{box-sizing:border-box}
+body{margin:0}
+button,textarea{font:inherit}
+button{color:inherit;cursor:pointer}
+button:disabled{cursor:default}
+button:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid #6251ba;outline-offset:3px}
+[hidden]{display:none!important}
+.header{background:var(--white);border-bottom:1px solid var(--line)}
+.header-inner{max-width:1170px;margin:auto;padding:16px clamp(18px,4vw,40px);display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:720;letter-spacing:-.025em}
+.logo{width:19px;height:19px;display:grid;grid-template-columns:repeat(2,1fr);gap:3px}
+.logo i{background:var(--ink)}
+.header small{color:var(--muted);font-size:.875rem}
+main{max-width:1170px;margin:auto;padding:clamp(24px,5vw,56px) clamp(18px,4vw,40px) 64px}
+h1,h2,h3,p{margin:0}
+h1{font-size:clamp(2rem,5vw,3.25rem);letter-spacing:-.055em;line-height:1.05}
+h2{font-size:1.25rem;line-height:1.25;letter-spacing:-.022em}
+h3{font-size:1rem}
+.intro{max-width:65ch;display:grid;gap:12px;margin-bottom:26px}
+.intro p,.muted{color:var(--muted)}
+.track{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));list-style:none;margin:0 0 24px;padding:0;gap:8px}
+.track li{border-top:3px solid var(--line);padding:7px 0 0;color:var(--muted);font-size:.875rem}
+.track [aria-current]{border-color:var(--accent);color:var(--accent);font-weight:750}
+.track .done{border-color:#aaa0d6}
+.layout{display:grid;align-items:start;grid-template-columns:minmax(0,1.18fr) minmax(0,1fr);gap:clamp(15px,3vw,29px)}
+.create{width:min(100%, 38rem)}
+.create .primary{justify-self:start}
+.stack{display:grid;gap:16px;align-content:start;min-width:0}
+.panel{background:var(--white);padding:clamp(16px,2.5vw,24px);border:1px solid var(--line);border-radius:18px;min-width:0}
+.btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid #b8bfd2;background:white;border-radius:10px;padding:8px 14px;font-weight:650;text-align:center}
+.btn:hover{background:#f6f4ff}
+.btn.primary{color:white;background:var(--accent);border-color:var(--accent)}
+.btn.primary:hover{background:#34276f}
+.btn[aria-pressed=true]{color:var(--accent);background:var(--soft);border-color:#7164b4}
+.btn:disabled{color:#667085;background:#edf0f6;border-color:#dce0eb}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.board{aspect-ratio:1;position:relative;overflow:hidden;border:1px solid #c4c9de;border-radius:12px;background-color:#fcfcff;background-image:radial-gradient(#cdd2e3 1px,transparent 1px);background-size:20px 20px;min-width:0}
+.tile{position:absolute;width:16%;aspect-ratio:1;border:0;background:#19243f;padding:0;color:white;font-size:clamp(.75rem,1.6vw,1rem);font-weight:700;display:grid;place-items:center}
+button.tile{touch-action:none;user-select:none;-webkit-user-select:none;cursor:grab}
+button.tile:active{cursor:grabbing}
+button.tile[aria-pressed=true]{box-shadow:0 0 0 3px #fff,0 0 0 6px #6251ba}
+.thumb .tile{font-size:0}
+.gallery .board,.thumb{background:#f7f6fc}
+.concepts,.grid{display:grid;gap:12px;grid-template-columns:repeat(3,minmax(0,1fr))}
+.concepts{max-width:42rem;grid-template-columns:repeat(2,minmax(0,1fr))}
+.concepts .btn{min-height:80px;font-size:1.15rem}
+.choice{display:grid;justify-items:stretch;gap:7px;width:100%;padding:8px;border:1px solid var(--line);border-radius:12px;background:#fff;text-align:left}
+.choice:hover{border-color:#7164b4}
+.choice[aria-pressed=true]{border-color:var(--accent);background:var(--soft)}
+.choice span.label{font-size:.9rem;font-weight:650}
+label{font-weight:700}
+textarea{width:100%;min-height:108px;padding:12px;border:1px solid #aeb8d0;border-radius:10px;color:var(--ink);resize:vertical}
+textarea::placeholder{color:#5e6778}
+.reading,.note{border-left:3px solid #a39ad0;padding:3px 0 3px 12px;white-space:pre-wrap;overflow-wrap:anywhere}
+.kicker{font-size:.875rem;font-weight:700;color:var(--accent)}
+.gallery{gap:14px;align-items:start}
+.gallery .panel{padding:14px}
+.gallery small{color:var(--muted)}
+.gallery .actions{margin-top:auto}
+.choice-list{display:flex;flex-wrap:wrap;gap:7px}
+.choice-list .btn{min-width:44px}
+#status{min-height:1.55em;margin-top:13px;color:var(--muted)}
+.panel #status{margin-top:0}
+@media(max-width:735px){.layout{grid-template-columns:minmax(0,1fr)}.gallery{grid-template-columns:repeat(2,minmax(0,1fr))}.track li{font-size:.8rem}.header-inner{gap:8px}.panel>.board{max-width:500px;margin-inline:auto;width:100%}}
+@media(max-width:430px){.gallery{grid-template-columns:minmax(0,1fr)}.summary{grid-template-columns:minmax(0,1fr)}}
+</style>
+</head>
+<body>
+<header class="header"><div class="header-inner">
+<div class="brand"><span class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i></span>4SQUARES Workspace</div>
+<small>P3 Demo · Online Solo</small>
+</div></header>
+<main id="app"></main>
+<script>
+/* Gallery compositions and interpretations from the published IMT540 prototype. */
+    const galleryExamples = {
+      Tension: [
+        ["Held Apart", [[13,25,0],[30,37,0],[19,53,0],[69,44,19]]],
+        ["Near Collision", [[18,30,-12],[36,41,18],[56,51,-16],[69,66,13]]],
+        ["On Edge", [[18,65,0],[38,65,0],[58,65,0],[57,28,43]]],
+        ["Squeezed", [[16, 41, 0], [34, 41, 0], [51, 41, 0], [67, 41, 0]]],
+        ["Standoff", [[15, 25, 0], [15, 57, 0], [69, 25, 0], [69, 57, 0]]],
+        ["Pulled Away", [[16, 43, 0], [35, 43, 0], [54, 43, 0], [72, 21, 28]]]
+      ],
+      Balance: [
+        ["Counterweight", [[18,26,0],[18,46,0],[18,66,0],[67,46,45]]],
+        ["Two Pairs", [[21,20,0],[40,20,0],[43,64,0],[62,64,0]]],
+        ["Balanced Around a Gap", [[42,14,0],[70,42,0],[42,70,0],[14,42,0]]],
+        ["Mirror Pairs", [[18, 25, -20], [18, 60, 20], [66, 25, 20], [66, 60, -20]]],
+        ["Quiet Center", [[26, 31, 0], [41, 31, 0], [41, 49, 0], [56, 49, 0]]],
+        ["Corner Weights", [[13, 13, 0], [69, 13, 0], [13, 69, 0], [69, 69, 0]]]
+      ],
+      Chaos: [
+        ["Scatter", [[13,19,-24],[67,12,31],[42,50,42],[21,70,-12]]],
+        ["Collision", [[30,29,19],[43,39,-38],[51,46,13],[41,58,52]]],
+        ["Broken Sequence", [[14,64,17],[32,20,36],[54,49,-27],[70,19,4]]],
+        ["Interrupted Grid", [[23, 23, 0], [59, 22, 24], [19, 66, -19], [48, 49, 43]]],
+        ["Uneven Drift", [[10, 29, -11], [28, 43, 36], [67, 47, -34], [52, 72, 14]]],
+        ["Crossing Paths", [[27, 21, 35], [54, 34, -30], [31, 53, -19], [62, 65, 39]]]
+      ],
+      Order: [
+        ["Grid", [[25,25,0],[58,25,0],[25,58,0],[58,58,0]]],
+        ["Even Interval", [[9,42,0],[31,42,0],[53,42,0],[75,42,0]]],
+        ["Measured Steps", [[13,14,0],[31,32,0],[49,50,0],[67,68,0]]],
+        ["Neat Column", [[42, 8, 0], [42, 30, 0], [42, 52, 0], [42, 74, 0]]],
+        ["Repeating Tilt", [[13, 25, 25], [39, 25, 25], [13, 59, 25], [39, 59, 25]]],
+        ["Right Angle", [[16, 22, 0], [16, 46, 0], [16, 70, 0], [40, 70, 0]]]
+      ]
+    };
+
+    const sampleReadings = {
+      Tension: [
+        "I read tension as pressure between a group and an outsider. I clustered three squares and kept one tilted across the gap.",
+        "Tension can feel like a collision that has not happened yet. I placed the squares close together at competing angles.",
+        "I wanted the feeling of something about to tip. One tilted square sits above a stable row.",
+        "The gaps shrink until the last two squares overlap. I wanted the row to feel compressed.",
+        "I placed two pairs across a wide gap. The empty middle feels like a space neither side will cross.",
+        "The tilted square breaks away from the row. I wanted the others to seem as if they were holding it back."
+      ],
+      Balance: [
+        "Balance can be uneven. The distance and tilt of the lone square counter the weight of the column.",
+        "I used two pairs and shifted them in opposite directions to spread the visual weight across the page.",
+        "I treated the empty center as a space the four squares could balance around.",
+        "I mirrored the angles on both sides so the rotation feels balanced.",
+        "I kept the arrangement close to the center and stepped the two pairs in opposite directions.",
+        "I gave each corner the same visual weight and left the middle open."
+      ],
+      Chaos: [
+        "I used uneven gaps and unrelated angles so the eye has several places to jump.",
+        "I wanted chaos to feel crowded. The squares collide from several directions and the edges compete for attention.",
+        "I started with a left-to-right sequence and broke it with abrupt jumps in height and rotation.",
+        "I used a familiar grid and then disrupted its positions and angles.",
+        "I left a large gap after the first pair and turned each square independently to break the rhythm.",
+        "The alternating positions and opposing angles make the eye zigzag through the frame."
+      ],
+      Order: [
+        "I used a repeated row and column spacing so each square has a predictable place.",
+        "For me, order is repetition. Equal intervals make the four squares read like a steady beat.",
+        "I repeated the same horizontal and vertical step. The diagonal has a predictable direction without a grid.",
+        "I aligned all four squares vertically and repeated the same gap.",
+        "The squares are tilted, but repeating the same angle and spacing makes them feel ordered.",
+        "Three squares trace a column and the last one turns the corner at the same interval."
+      ]
+    };
+const app = document.querySelector('#app');
+const storageKey = 'four-squares-p3-demo-v1';
+const initial = [[34,34,0],[66,34,0],[34,66,0],[66,66,0]];
+const copy = squares => squares.map(square => [...square]);
+const fresh = () => ({
+  phase:'start', concept:null, slots:Array(6).fill(null), drafts:Array(6).fill(null),
+  active:0, selected:null, favorite:null, before:'', after:'', revision:null, decision:null
+});
+let state = fresh();
+try {
+  const saved = JSON.parse(localStorage.getItem(storageKey));
+  if (saved && saved.slots?.length === 6 && Object.hasOwn(galleryExamples, saved.concept)) state = saved;
+} catch {}
+if (state.phase === 'make') {
+  const next = state.slots.findIndex(squares => !squares);
+  if (next === -1) state.phase = 'choose';
+  else state.active = next;
+}
+let working = copy(state.phase === 'revision' ? state.revision ?? state.slots[state.selected] : state.drafts[state.active] ?? state.slots[state.active] ?? initial);
+let selectedTile = 0;
+let openCard = null;
+const message = text => { const status = document.querySelector('#status'); if (status) status.textContent = text; };
+const commit = () => {
+  try { localStorage.setItem(storageKey, JSON.stringify(state)); return true; }
+  catch { message('Progress is available in this tab. Browser storage is unavailable.'); return false; }
+};
+function node(tag, className, content) {
+  const el = document.createElement(tag);
+  if (className) el.className = className;
+  if (content !== undefined) el.textContent = content;
+  return el;
+}
+function button(label, action, style = '') {
+  const el = node('button', 'btn ' + style, label);
+  el.type = 'button';
+  el.addEventListener('click', action);
+  return el;
+}
+function group(className, ...children) {
+  const el = node('div', className);
+  el.append(...children.filter(Boolean));
+  return el;
+}
+function go(phase) {
+  state.phase = phase;
+  commit();
+  render(true);
+  window.scrollTo({top:0, behavior:'instant'});
+}
+function title(heading, description) {
+  const h = node('h1', '', heading);
+  h.tabIndex = -1;
+  app.append(group('intro', h, node('p', '', description)));
+}
+function timeline() {
+  const order = ['Explore', 'Choose', 'Gallery', 'Reflect'];
+  const current = {make:0, choose:1, before:1, gallery:2, after:3, decision:3, revision:3, summary:3}[state.phase];
+  const list = node('ol', 'track');
+  list.setAttribute('aria-label', 'Activity progress');
+  order.forEach((label, index) => {
+    const li = node('li', index < current ? 'done' : '', label);
+    if (index === current) li.setAttribute('aria-current', 'step');
+    list.append(li);
+  });
+  app.append(list);
+}
+function paint(tile, square) {
+  const [x,y,angle] = square;
+  tile.style.left = x + '%';
+  tile.style.top = y + '%';
+  tile.style.transform = 'translate(-50%, -50%) rotate(' + angle + 'deg)';
+}
+function board(squares, {name = 'Four-square composition', editable = false, mini = false} = {}) {
+  const art = node('div', 'board' + (mini ? ' thumb' : ''));
+  const updateSelection = () => [...art.children].forEach((tile, i) => {
+    tile.setAttribute('aria-pressed', String(i === selectedTile));
+    const [x,y,angle] = squares[i];
+    tile.setAttribute('aria-label', 'Square ' + (i+1) + ', ' + Math.round(x) + '% across, ' + Math.round(y) + '% down, rotated ' + angle + ' degrees');
+  });
+  if (editable) {
+    art.setAttribute('role', 'group');
+    art.setAttribute('aria-label', name);
+  } else if (mini) {
+    art.setAttribute('aria-hidden', 'true');
+  } else {
+    art.setAttribute('role', 'img');
+    art.setAttribute('aria-label', name + '. ' + squares.map(([x,y,a],i) =>
+      'Square ' + (i+1) + ' is ' + Math.round(x) + '% across, ' + Math.round(y) + '% down, rotated ' + a + ' degrees.').join(' '));
+  }
+  squares.forEach((square, i) => {
+    const tile = node(editable ? 'button' : 'span', 'tile', editable ? String(i+1) : '');
+    paint(tile, square);
+    if (editable) {
+      tile.type = 'button';
+      const select = () => { selectedTile = i; updateSelection(); };
+      tile.addEventListener('click', select);
+      tile.addEventListener('focus', select);
+      tile.addEventListener('keydown', event => {
+        const movement = {ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[event.key];
+        if (!movement) return;
+        event.preventDefault();
+        const step = event.shiftKey ? 5 : 1;
+        changeSquare(i, square[0] + movement[0]*step, square[1] + movement[1]*step, square[2]);
+        paint(tile, square);
+        updateSelection();
+      });
+      tile.addEventListener('pointerdown', event => {
+        if (!event.isPrimary || event.button !== 0) return;
+        const {width,height} = art.getBoundingClientRect();
+        const startX = event.clientX, startY = event.clientY;
+        const [x,y,angle] = square;
+        let dragging = false;
+        select();
+        tile.setPointerCapture(event.pointerId);
+        const move = next => {
+          if (next.pointerId !== event.pointerId) return;
+          const dx = next.clientX - startX, dy = next.clientY - startY;
+          if (!dragging && Math.hypot(dx,dy) < 5) return;
+          dragging = true;
+          changeSquare(i, x + dx / width * 100, y + dy / height * 100, angle, false);
+          paint(tile, square);
+        };
+        const end = last => {
+          if (last.pointerId !== event.pointerId) return;
+          tile.removeEventListener('pointermove', move);
+          tile.removeEventListener('lostpointercapture', end);
+          if (dragging) saveDraft();
+          updateSelection();
+        };
+        tile.addEventListener('pointermove', move);
+        tile.addEventListener('lostpointercapture', end);
+      });
+    }
+    art.append(tile);
+  });
+  if (editable) updateSelection();
+  return art;
+}
+function saveDraft() {
+  if (state.phase === 'revision') state.revision = copy(working);
+  else {
+    state.drafts[state.active] = copy(working);
+  }
+  commit();
+}
+function changeSquare(index, x, y, angle, persist = true) {
+  const radians = angle * Math.PI / 180;
+  const edge = 8 * (Math.abs(Math.cos(radians)) + Math.abs(Math.sin(radians)));
+  const clamp = value => Math.min(100-edge, Math.max(edge, value));
+  working[index].splice(0, 3, clamp(x), clamp(y), angle);
+  if (persist) saveDraft();
+}
+function editor() {
+  const art = board(working, {name:'Editable four-square composition', editable:true});
+  const turn = amount => {
+    const [x,y,angle] = working[selectedTile];
+    const updated = ((angle + amount + 180 + 360) % 360) - 180;
+    changeSquare(selectedTile, x, y, updated);
+    const tile = art.children[selectedTile];
+    paint(tile, working[selectedTile]);
+    tile.setAttribute('aria-label', 'Square ' + (selectedTile+1) + ', ' + Math.round(working[selectedTile][0]) + '% across, ' + Math.round(working[selectedTile][1]) + '% down, rotated ' + updated + ' degrees');
+    message('Square ' + (selectedTile+1) + ' rotated to ' + updated + '°.');
+  };
+  return group('panel stack', art, group('actions',
+    button('↶ Rotate left', () => turn(-15)), button('↷ Rotate right', () => turn(15))),
+    node('p','muted','Drag a square or select it and use the arrow keys. Use the buttons to rotate the selected square.'));
+}
+function versionCard(squares, index, action, selected = false) {
+  const el = button('', action);
+  el.className = 'choice';
+  el.setAttribute('aria-pressed', String(selected));
+  if (squares) el.append(board(squares,{mini:true}));
+  el.append(node('span','label', 'Arrangement ' + (index+1)));
+  return el;
+}
+function makePage() {
+  const index = state.active;
+  const layoutKey = squares => squares.map(([x,y,angle]) =>
+    [Math.round(x*10),Math.round(y*10),((angle % 90)+90)%90].join('/')).sort().join('|');
+  const save = () => {
+    const current = layoutKey(working);
+    if (state.slots.some(squares => squares && layoutKey(squares) === current)) {
+      message('This matches an arrangement you already saved. Try changing a gap, position, or angle.');
+      return;
+    }
+    state.slots[index] = copy(working);
+    state.drafts[index] = null;
+    const next = state.slots.findIndex(squares => !squares);
+    if (next === -1) {
+      go('choose');
+      return;
+    }
+    state.active = next;
+    state.drafts[next] ??= copy(working);
+    working = copy(state.drafts[next]);
+    selectedTile = 0;
+    go('make');
+  };
+  const first = !state.slots.some(Boolean);
+  title(first ? 'Make an arrangement' : 'Try another arrangement', first
+    ? 'Arrange the four squares to express ' + state.concept.toLowerCase() + '.'
+    : 'Try a different way to express ' + state.concept.toLowerCase() + '. You can start by moving or turning one square.');
+  const workspace = editor();
+  const status = node('p');
+  status.id = 'status';
+  status.setAttribute('role','status');
+  workspace.append(button('Save & continue',save,'primary'),status);
+  app.append(group('create',workspace));
+}
+function choosePage() {
+  title('Choose one arrangement to revisit', 'Set aside one of your six arrangements to think about before and after the Gallery.');
+  const cards = state.slots.map((squares,index) => versionCard(squares,index,() => {
+    if (state.selected !== index) {
+      state.selected = index;
+      state.before = '';
+      state.after = '';
+      state.revision = null;
+      state.decision = null;
+    }
+    commit();
+    render();
+    [...app.querySelectorAll('.choice')][index]?.focus();
+  },state.selected === index));
+  const next = button('Reflect on this arrangement',()=>go('before'),'primary');
+  next.disabled = state.selected === null;
+  app.append(group('panel stack',group('grid',...cards),
+    group('actions',next)));
+}
+function noteField(key, labelText, placeholder) {
+  const label = node('label','',labelText);
+  label.htmlFor = 'reflection';
+  const area = node('textarea');
+  area.id = 'reflection';
+  area.value = state[key];
+  area.placeholder = placeholder;
+  area.addEventListener('input', () => { state[key] = area.value; commit(); });
+  return group('stack',label,area);
+}
+function sample(index) {
+  const [name, squares] = galleryExamples[state.concept][index];
+  return {name,squares:squares.map(([x,y,a])=>[x+8,y+8,a]),reading:sampleReadings[state.concept][index]};
+}
+function savedExample() {
+  if (state.favorite === null) return null;
+  const entry = sample(state.favorite);
+  const details = node('details','panel stack');
+  details.append(node('summary','', 'Saved example · ' + entry.name), board(entry.squares,{name:entry.name}),node('p','reading',entry.reading),node('p','muted','Sample / AI-generated'));
+  return details;
+}
+function reflectionPage(after) {
+  title(after ? 'Revisit your arrangement' : 'Before the Gallery', after
+    ? 'Look again at the arrangement you chose. Your earlier note and saved example are here if you want them.'
+    : 'Take a moment to record what your arrangement means to you now.');
+  const selected = group('panel stack',node('h2','','Arrangement ' + (state.selected+1)),
+    board(state.slots[state.selected],{name:'Your selected arrangement'}));
+  const beforeNote = state.before.trim() ? group('stack',
+    node('h3','','Your note before the Gallery'),node('p','note',state.before)) : null;
+  const controls = group('panel stack',after ? beforeNote : null,
+    noteField(after?'after':'before', after
+      ? 'Looking at your arrangement again, what, if anything, would you keep or change? Why?'
+      : 'What were you trying to express, and which detail helped you do that?',
+      'Your note (optional)'),
+    group('actions',button(after?'Continue to decision':'Open Gallery',()=>go(after?'decision':'gallery'),'primary'),
+      button(after?'Back to Gallery':'Choose a different arrangement',()=>go(after?'gallery':'choose'))));
+  app.append(group('layout',selected,group('stack',controls,after?savedExample():null)));
+}
+function galleryPage() {
+  if (!state.slots.every(Boolean) || state.selected === null) { go('make'); return; }
+  title(state.concept + ' Gallery', 'Explore other ways to express the same concept. Save one example if you want it nearby when you reflect.');
+  const cards = galleryExamples[state.concept].map((_, index) => {
+    const entry = sample(index);
+    const reading = node('p','reading',entry.reading);
+    reading.id = 'reading-' + index;
+    reading.hidden = openCard !== index;
+    const reveal = button(reading.hidden?'Read interpretation':'Hide interpretation',()=>{
+      reading.hidden = !reading.hidden;
+      openCard = reading.hidden ? null : index;
+      reveal.textContent = reading.hidden?'Read interpretation':'Hide interpretation';
+      reveal.setAttribute('aria-expanded',String(!reading.hidden));
+    });
+    reveal.setAttribute('aria-controls',reading.id);
+    reveal.setAttribute('aria-expanded',String(!reading.hidden));
+    const save = button(state.favorite===index?'Saved example':'Save example',()=>{
+      state.favorite = state.favorite===index ? null : index;
+      commit();
+      for (const [i,control] of [...app.querySelectorAll('[data-save-example]')].entries()) {
+        control.textContent = i === state.favorite ? 'Saved example' : 'Save example';
+        control.setAttribute('aria-pressed',String(i===state.favorite));
+      }
+      message(state.favorite===null?'Example removed.':'Saved ' + entry.name + ' for reflection.');
+    });
+    save.dataset.saveExample = '';
+    save.setAttribute('aria-label','Save example: ' + entry.name);
+    save.setAttribute('aria-pressed',String(state.favorite===index));
+    return group('panel stack',board(entry.squares,{name:entry.name}),group('stack',
+      node('h2','',entry.name),node('small','','Sample / AI-generated')),group('actions',reveal,save),reading);
+  });
+  app.append(group('stack',group('actions',button('Continue to reflection',()=>go('after'),'primary')),group('grid gallery',...cards)));
+}
+function decisionPage() {
+  title('What would you like to do?', 'Either choice completes the activity. If you try a change, your original stays available.');
+  app.append(group('panel stack', group('actions',
+    button('Keep my arrangement',()=>{state.decision='original';go('summary');}),
+    button('Try a revision',()=>{working=copy(state.revision??state.slots[state.selected]); selectedTile=0; go('revision');}),
+    button('Back to reflection',()=>go('after')))));
+}
+function revisionPage() {
+  title('Try a revision', 'Experiment with a change, then compare it with your original.');
+  app.append(group('layout',editor(),group('panel stack',node('h2','','Original arrangement'),
+    board(state.slots[state.selected],{name:'Original arrangement'}),
+    group('actions',button('Compare arrangements',()=>{state.revision=copy(working);state.decision=null;go('summary');},'primary'),
+      button('Back to decision',()=>go('decision'))))));
+}
+function summaryPage() {
+  const original = state.slots[state.selected];
+  title('Your design and reflection', state.decision==='original'?'You kept your original arrangement.':
+    state.decision==='revision'?'You kept your revised arrangement.':'Compare the two arrangements and choose which one to keep.');
+  const showRevision = Boolean(state.revision);
+  const cards = group('layout summary',
+    group('panel stack',node('h2','','Original'),board(original,{name:'Original arrangement'})),
+    showRevision ? group('panel stack',node('h2','','Revision'),board(state.revision,{name:'Revised arrangement'})) : null);
+  const notes = group('panel stack',node('h2','','Your reflections'),
+    node('h3','','Before the Gallery'),node('p','note',state.before.trim()||'No note added.'),
+    node('h3','','After the Gallery'),node('p','note',state.after.trim()||'No note added.'));
+  const actions = group('actions',
+    showRevision ? button('Keep original',()=>{state.decision='original';go('summary');},state.decision==='original'?'primary':'') : null,
+    showRevision ? button('Keep revision',()=>{state.decision='revision';go('summary');},state.decision==='revision'?'primary':'') : null,
+    button('Back to reflection',()=>go('after')),
+    button('Start over',()=>{
+      if (!confirm('Start over and clear these demo arrangements and notes?')) return;
+      state = fresh(); openCard = null; working = copy(initial); go('start');
+    }));
+  app.append(group('stack',cards,group('layout',notes,savedExample()),actions));
+}
+function startPage() {
+  title('Express an idea with four squares', 'Choose a concept and use four squares to show what it means to you.');
+  const concepts = Object.keys(galleryExamples).map(concept=>button(concept,()=>{
+    state.concept = concept;
+    working = copy(initial);
+    selectedTile = 0;
+    go('make');
+  }));
+  app.append(group('panel stack',node('h2','','Choose a concept'),group('concepts',...concepts)));
+}
+function render(focus = false) {
+  app.replaceChildren();
+  if (state.phase !== 'start' && state.phase !== 'make') timeline();
+  const pages = {start:startPage,make:makePage,choose:choosePage,before:()=>reflectionPage(false),
+    gallery:galleryPage,after:()=>reflectionPage(true),decision:decisionPage,revision:revisionPage,summary:summaryPage};
+  (pages[state.phase] ?? startPage)();
+  if (!app.querySelector('#status')) {
+    const status = node('p');
+    status.id = 'status';
+    status.setAttribute('role','status');
+    app.append(status);
+  }
+  if (focus) app.querySelector('h1')?.focus({preventScroll:true});
+}
+render();
+</script>
+</body>
+</html>
