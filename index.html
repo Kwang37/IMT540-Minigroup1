@@ -749,6 +749,7 @@
     }
     .reflection-question { display: grid; gap: 8px; }
     .reflection-question label { margin: 0; line-height: 1.4; }
+    .reflection-next-stage { display: grid; gap: 8px; }
     .reflection-next {
       display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
     }
@@ -1195,8 +1196,10 @@
               <button id="discardDraftBtn" type="button" class="btn" onclick="discardWorkingDraft()" hidden>Discard Changes</button>
               <span id="versionSaveStatus" class="meta-note" role="status"></span>
             </div>
-            <h3 class="meta-note">Saved Versions</h3>
-            <ul id="choicesList" class="choices-list" aria-label="Saved versions"></ul>
+            <details id="savedVersions">
+              <summary>Saved Versions</summary>
+              <ul id="choicesList" class="choices-list" aria-label="Saved versions"></ul>
+            </details>
           </section>
         </div>
 
@@ -1228,13 +1231,17 @@
           <p id="onlineCreateHint"></p>
           <button type="button" class="btn btn-primary" onclick="goToStep(1.25)">Continue to Reflection</button>
         </section>
+        <section id="inPersonCreatePanel" class="panel-group" aria-labelledby="inPersonCreateTitle" hidden>
+          <h2 id="inPersonCreateTitle" class="panel-title">Add Your Composition</h2>
+          <p id="createInstruction"></p>
+          <button type="button" id="inPersonReflectBtn" class="btn btn-primary" onclick="goToStep(1.25)" disabled>Continue to Reflection</button>
+        </section>
         <section id="panelStep1" class="panel-group" aria-labelledby="step1Title">
           <div class="disclosure-header">
             <h2 id="step1Title" class="panel-title">Make Your First Composition</h2>
             <span id="v1LockBadge" class="badge">In progress</span>
           </div>
 
-          <p id="createInstruction"></p>
           <button id="backToComposition" type="button" class="btn" onclick="goToStep(1)" hidden>Back to Composition</button>
           <div>
             <h3>Reflection 1 · Before the Gallery</h3>
@@ -1279,13 +1286,16 @@
           </details>
           <div class="reflection-question">
             <label for="understandingShiftField" id="secondReflectionPrompt">What did the Gallery help you notice?</label>
-            <p id="reflectionCue" class="meta-note">What would you keep or try in your arrangement, and why?</p>
-            <textarea id="understandingShiftField" aria-describedby="reflectionCue" rows="4" oninput="validateStep2Gate()"></textarea>
+            <textarea id="understandingShiftField" rows="4" oninput="validateStep2Gate()"></textarea>
           </div>
-          <div class="reflection-next" role="group" aria-label="Next step">
-            <button type="button" id="keepFirstBtn" class="btn" onclick="finishReflection(false)" disabled>Keep original</button>
-            <button type="button" id="toStep3Btn" class="btn" onclick="finishReflection(true)" disabled>Try a variation</button>
-          </div>
+          <button type="button" id="continueReflectionBtn" class="btn btn-primary" onclick="showReflectionNext()" aria-controls="reflectionNext" disabled>Continue</button>
+          <section id="reflectionNext" class="reflection-next-stage" aria-labelledby="reflectionNextTitle" hidden>
+            <h3 id="reflectionNextTitle" class="panel-title" tabindex="-1">Choose how to continue</h3>
+            <div class="reflection-next">
+              <button type="button" id="keepFirstBtn" class="btn" onclick="finishReflection(false)">Keep original</button>
+              <button type="button" id="toStep3Btn" class="btn" onclick="finishReflection(true)">Try a variation</button>
+            </div>
+          </section>
           <div class="draft-actions">
             <button type="button" class="btn reflection-link" onclick="saveReflectionDraft()" aria-describedby="draftHint">Save draft</button>
             <span id="draftHint" class="sr-only">Saves your notes in this browser.</span>
@@ -1324,21 +1334,22 @@
 
           <p id="selectedSummaryBadge" class="badge badge-active">Kept: V1</p>
 
-          <div>
-            <label id="finalReasonLabel" for="finalReasonField">Why keep this version over the other saved choices?</label>
-            <textarea id="finalReasonField" placeholder="State how comparing the versions side by side informed your final decision..."></textarea>
-          </div>
+          <button type="button" id="continueDecisionBtn" class="btn btn-primary" onclick="showDecision()" aria-controls="decisionPanel" hidden>Continue to decision</button>
+          <section id="decisionPanel" class="panel-group" aria-labelledby="finalReasonLabel" hidden>
+            <div>
+              <label id="finalReasonLabel" for="finalReasonField" tabindex="-1">Why keep this version over the other saved choices?</label>
+              <textarea id="finalReasonField" oninput="hideDecisionExport()"></textarea>
+            </div>
+            <button type="button" class="btn btn-primary" onclick="recordDecisionLog()" aria-controls="decisionExport">Save Decision to Log</button>
+          </section>
 
-          <div class="action-row">
-            <button type="button" class="btn btn-primary" onclick="recordDecisionLog()">Save Decision to Log</button>
-          </div>
-
-          <div class="action-row">
-            <button type="button" class="btn" onclick="exportSessionJSON()">Export JSON</button>
-            <button type="button" class="btn" onclick="downloadSessionSummaryTxt()">Download Summary (.txt)</button>
-          </div>
-
-          <output id="finalLogOutput" class="log-output" hidden></output>
+          <section id="decisionExport" class="panel-group" aria-label="Export decision" hidden>
+            <output id="finalLogOutput" class="log-output" tabindex="-1"></output>
+            <div class="action-row">
+              <button type="button" class="btn" onclick="exportSessionJSON()">Export JSON</button>
+              <button type="button" class="btn" onclick="downloadSessionSummaryTxt()">Download Summary (.txt)</button>
+            </div>
+          </section>
         </section>
 
       </aside>
@@ -1412,16 +1423,14 @@
 
     function syncPhotoWorkspace() {
       const usePhoto = mode === "inperson";
-      document.getElementById("backToComposition").hidden = usePhoto || v1Locked;
+      document.getElementById("backToComposition").hidden = v1Locked;
       document.getElementById("nextExploration").hidden = usePhoto || currentStep === 1.25;
       document.getElementById("reflectionIntro").hidden = usePhoto;
       document.getElementById("firstReflectionPrompt").textContent = usePhoto
         ? "Why did you arrange the squares this way?"
         : "What idea or feeling did you want to show? Describe one choice you made with the squares and why.";
-      document.getElementById("createInstruction").hidden = currentStep === 1.25;
-      document.getElementById("createInstruction").textContent = usePhoto
-        ? `Add your four-square arrangement for ${selectedConcept}.`
-        : `Move or turn the four squares to express ${selectedConcept}. Start by trying one change, such as moving two squares closer together, and see how it affects the composition.`;
+      document.getElementById("createInstruction").textContent =
+        `Add your four-square arrangement for ${selectedConcept}.`;
       document.getElementById("photoWorkspace").hidden = !usePhoto;
       document.getElementById("variationInstruction").textContent = usePhoto
         ? "Try a new arrangement on the canvas or add a photo or PDF. Save it as a new version."
@@ -2008,13 +2017,15 @@
       document.getElementById("v1LockBadge").textContent = "In progress";
       document.getElementById("lockV1Btn").textContent = "Save & Open Gallery";
 
-      document.getElementById("finalLogOutput").hidden = true;
+      document.getElementById("savedVersions").open = false;
+      hideDecisionExport();
       document.getElementById("v1GhostToggle").checked = false;
       validateStep1Gate();
       goToStep(1);
     }
 
     function validateStep1Gate() {
+      document.getElementById("inPersonReflectBtn").disabled = !workingPhoto;
       const hasGoal = document.getElementById("goalField").value.trim().length > 0;
       document.getElementById("lockV1Btn").disabled = !hasGoal || (mode === "inperson" && !workingPhoto);
     }
@@ -2044,9 +2055,19 @@
 
     function validateStep2Gate() {
       const hasResponse = Boolean(document.getElementById("understandingShiftField").value.trim());
-      document.getElementById("keepFirstBtn").disabled = !hasResponse;
-      document.getElementById("toStep3Btn").disabled = !hasResponse;
+      if (!hasResponse) document.getElementById("reflectionNext").hidden = true;
+      const nextVisible = !document.getElementById("reflectionNext").hidden;
+      const continueButton = document.getElementById("continueReflectionBtn");
+      continueButton.disabled = !hasResponse;
+      continueButton.hidden = nextVisible;
       updateMobileSteps();
+    }
+
+    function showReflectionNext() {
+      if (document.getElementById("continueReflectionBtn").disabled) return;
+      document.getElementById("reflectionNext").hidden = false;
+      validateStep2Gate();
+      document.getElementById("reflectionNextTitle").focus();
     }
 
     function finishReflection(redesign) {
@@ -2067,7 +2088,7 @@
     const mobileStepList = document.getElementById("mobileStepList");
 
     function updateMobileSteps() {
-      const reflectionReady = Boolean(document.getElementById("understandingShiftField").value.trim());
+      const reflectionReady = !document.getElementById("reflectionNext").hidden;
       const availableSteps = {
         1: true,
         1.5: v1Locked,
@@ -2152,14 +2173,15 @@
         activeChoiceIdx = 0;
         workingSquares = clone(choices[0].squares);
         workingPhoto = choices[0].photo || "";
-        goToStep(mode === "online" ? 1.25 : 1);
+        goToStep(1.25);
         return;
       }
       goToStep(step);
     }
 
     function goToStep(stepNumber) {
-      if (stepNumber >= 1.5 && !v1Locked) {
+      if ((stepNumber >= 1.5 && !v1Locked) ||
+          (stepNumber === 1.25 && mode === "inperson" && !workingPhoto)) {
         validateStep1Gate();
         return;
       }
@@ -2184,9 +2206,11 @@
       const inPerson = mode === "inperson";
       const isCompare = currentStep === 4 && !inPerson && compareRequested && choices.length > 1;
       const isSummary = currentStep === 4 && !isCompare;
-      const onlineCreation = !inPerson && currentStep === 1;
+      const isCreation = currentStep === 1;
+      const onlineCreation = !inPerson && isCreation;
       document.getElementById("stageSection").hidden = isGallery || isSummary;
       document.getElementById("onlineCreatePanel").hidden = !onlineCreation;
+      document.getElementById("inPersonCreatePanel").hidden = !(inPerson && isCreation);
       document.getElementById("onlineCreateHint").textContent =
         `Arrange four squares to express ${selectedConcept}. Try changing one gap and see what that does to the arrangement.`;
       document.getElementById("stepNav4").textContent = inPerson || choices.length < 2 || isSummary ? "4. Summary & Export" : "4. Compare & Export";
@@ -2202,7 +2226,7 @@
       document.getElementById("compareView").hidden = !isCompare;
 
       document.getElementById("step1Title").textContent = currentStep === 1.25 ? "Reflection 1" : "Make Your First Composition";
-      document.getElementById("panelStep1").hidden = currentStep !== 1.25 && (currentStep !== 1 || onlineCreation);
+      document.getElementById("panelStep1").hidden = currentStep !== 1.25;
       document.getElementById("panelStep2").hidden = currentStep !== 2;
       document.getElementById("panelStep3").hidden = currentStep !== 3;
       document.getElementById("panelStep4").hidden = currentStep !== 4;
@@ -2217,6 +2241,7 @@
         workingPhoto = choices[0].photo || "";
         activeChoiceIdx = 0;
         syncPhotoWorkspace();
+        document.getElementById("reflectionNext").hidden = true;
         validateStep2Gate();
         renderReflectionReference();
       }
@@ -2226,6 +2251,10 @@
           shiftText || "No reflection recorded.";
         renderChoicesList();
       } else if (currentStep === 4) {
+        document.getElementById("decisionPanel").hidden = true;
+        document.getElementById("continueDecisionBtn").hidden = isCompare;
+        document.getElementById("selectedSummaryBadge").hidden = isCompare;
+        hideDecisionExport();
         document.getElementById("journeyBefore").textContent = firstReflection?.text || "";
         document.getElementById("journeyAfter").textContent = secondReflection?.text || "";
         if (isCompare) renderCompareGallery();
@@ -2235,7 +2264,9 @@
 
       updateDraftStatusUI();
       renderBoard();
-      const heading = document.getElementById(isGallery ? "galleryTitle" : onlineCreation ? "onlineCreateTitle" : currentStep === 1.25 ? "step1Title" : `step${currentStep}Title`);
+      const heading = document.getElementById(isGallery ? "galleryTitle"
+        : isCreation ? (onlineCreation ? "onlineCreateTitle" : "inPersonCreateTitle")
+        : currentStep === 1.25 ? "step1Title" : `step${currentStep}Title`);
       heading.tabIndex = -1;
       updateMobileSteps();
       if (mobileLayout.matches) {
@@ -2530,7 +2561,7 @@
       const showOverlay = document.getElementById("galleryGhostToggle").checked;
 
       choices.forEach((ch, idx) => {
-        const isKept = idx === keptChoiceIdx;
+        const isKept = idx === keptChoiceIdx && !document.getElementById("decisionPanel").hidden;
         const article = document.createElement("article");
         article.className = `compare-item ${isKept ? "is-selected" : ""}`;
 
@@ -2598,17 +2629,19 @@
         keepBtn.textContent = isKept ? "Kept Version" : "Select to Keep";
         keepBtn.addEventListener("click", () => {
           keptChoiceIdx = idx;
+          showDecision();
           renderCompareGallery();
-          grid.children[idx].querySelector("button").focus({ preventScroll: true });
           persistSessionState();
         });
 
         article.appendChild(head);
         article.appendChild(miniBoard);
         article.appendChild(reflectMeta);
-        article.appendChild(noteLabel);
-        article.appendChild(noteInput);
-        article.appendChild(keepBtn);
+        const noteDetails = document.createElement("details");
+        const noteSummary = document.createElement("summary");
+        noteSummary.textContent = "Version note";
+        noteDetails.append(noteSummary, noteLabel, noteInput);
+        article.append(noteDetails, keepBtn);
         grid.appendChild(article);
       });
 
@@ -2714,12 +2747,24 @@
       startBlankSession();
     }
 
+    function hideDecisionExport() {
+      document.getElementById("decisionExport").hidden = true;
+    }
+
+    function showDecision() {
+      document.getElementById("continueDecisionBtn").hidden = true;
+      document.getElementById("selectedSummaryBadge").hidden = false;
+      document.getElementById("decisionPanel").hidden = false;
+      hideDecisionExport();
+      document.getElementById("finalReasonLabel").focus();
+    }
+
     function recordDecisionLog() {
       const saved = persistSessionState();
       const payload = buildSessionPayload();
       const output = document.getElementById("finalLogOutput");
       output.replaceChildren();
-      output.hidden = false;
+      document.getElementById("decisionExport").hidden = false;
 
       const heading = document.createElement("strong");
       heading.textContent = saved ? "Decision saved in this browser." : "Decision ready to export. Browser storage is unavailable or full.";
@@ -2743,6 +2788,7 @@
       const reasonLine = document.createElement("div");
       reasonLine.textContent = `Final Rationale: ${payload.finalDecisionRationale || "None recorded"}`;
       output.appendChild(reasonLine);
+      output.focus();
     }
 
     function exportSessionJSON() {
