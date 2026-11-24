@@ -657,6 +657,13 @@
     .photo-frame { position: relative; width: fit-content; margin-inline: auto; }
     .photo-frame .eye-pin { pointer-events: none; }
     .composition-photo { display: block; width: 100%; max-height: 32rem; object-fit: contain; }
+    #galleryV1Preview { width: min(100%, 42rem); margin-block: 8px; }
+    .sample-save-status { margin-inline-start: .35em; }
+    .sample-save[aria-pressed="true"] {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      color: var(--accent);
+    }
     .journey-grid { display: grid; gap: 12px; }
     @media (min-width: 600px) { .journey-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     #galleryList { display: grid; gap: 12px; }
@@ -1107,6 +1114,11 @@
           <button type="button" class="btn btn-primary" onclick="goToStep(2)">Continue to Reflection</button>
         </header>
         <p>Tap or click a card to read the interpretation behind the arrangement.</p>
+        <details id="galleryV1" class="disclosure-block" ontoggle="showGalleryV1()" hidden>
+          <summary>View my V1</summary>
+          <div id="galleryV1Preview"></div>
+          <p id="galleryV1Sharing" class="meta-note"></p>
+        </details>
         <details class="disclosure-block">
           <summary>Simulated Peer Feedback</summary>
           <p>This example comment was written in advance. It does not come from a classmate or respond to your arrangement.</p>
@@ -1116,6 +1128,7 @@
           <button class="btn" type="button" onclick="scrollSamples(-1)">Previous Cards</button>
           <button class="btn" type="button" onclick="scrollSamples(1)">Next Cards</button>
         </div>
+        <p id="sampleSaveHelp" class="meta-note" hidden>You can save one example for Reflection 2.<span id="sampleSaveStatus" class="sample-save-status" role="status"></span></p>
         <div id="gallerySamples" class="sample-grid" tabindex="0" role="region" aria-label="Six example compositions"></div>
         <section id="peerWorks" aria-labelledby="peerWorksTitle" hidden>
           <h3 id="peerWorksTitle">Peer Works</h3>
@@ -1508,13 +1521,16 @@
 
     function cacheGallery(message) {
       const status = document.getElementById("galleryStatus");
+      let stored = true;
       try {
         localStorage.setItem(galleryKey, JSON.stringify([...gallery.values()]));
         status.textContent = message;
       } catch {
+        stored = false;
         status.textContent = message + " Export the gallery file to keep a copy.";
       }
       renderGallery();
+      return stored;
     }
 
     function publishToGallery() {
@@ -1530,7 +1546,7 @@
         id: galleryPostId, concept: selectedConcept, interpretation,
         photo: baseline.photo, squares: baseline.photo ? [] : clone(baseline.squares), comments: []
       });
-      cacheGallery("Anonymous composition added.");
+      if (cacheGallery("Anonymous composition added.")) persistSessionState();
     }
 
     function readGalleryPosts(posts) {
@@ -1760,30 +1776,65 @@
       const grid = document.getElementById("gallerySamples");
       grid.replaceChildren();
       document.getElementById("galleryTitle").textContent = selectedConcept + " Gallery";
+      document.getElementById("sampleSaveHelp").hidden = mode !== "online";
+      const status = document.getElementById("sampleSaveStatus");
+      const examples = galleryExamples[selectedConcept] || [];
+      status.textContent = "";
       const marks = [];
-      (galleryExamples[selectedConcept] || []).forEach((_, index) => {
+      const updateMarks = () => marks.forEach((button, index) => {
+        const saved = index === markedSample;
+        button.setAttribute("aria-pressed", String(saved));
+        button.textContent = saved ? "Saved for Reflection ✓" : "Save for Reflection";
+      });
+      examples.forEach(([title], index) => {
         const card = gallerySampleCard(index);
         if (mode === "online") {
           const mark = document.createElement("button");
           mark.type = "button";
-          mark.className = "btn btn-sm";
-          mark.textContent = "Save for Reflection";
-          mark.setAttribute("aria-pressed", String(markedSample === index));
+          mark.className = "btn btn-sm sample-save";
           marks.push(mark);
           mark.onclick = () => {
+            const previousTitle = examples[markedSample]?.[0];
             markedSample = markedSample === index ? null : index;
-            marks.forEach((button, i) => button.setAttribute("aria-pressed", String(markedSample === i)));
+            updateMarks();
+            if (markedSample === null) status.textContent = `Removed “${title}” from Reflection 2.`;
+            else if (previousTitle) status.textContent = `Saved “${title}” in place of “${previousTitle}”.`;
+            else status.textContent = `Saved “${title}” for Reflection 2.`;
             persistSessionState();
           };
           card.append(mark);
         }
         grid.append(card);
       });
+      updateMarks();
       grid.scrollLeft = 0;
+    }
+
+    function showGalleryV1() {
+      const details = document.getElementById("galleryV1");
+      const preview = document.getElementById("galleryV1Preview");
+      const photo = choices[0]?.photo;
+      if (details.hidden || !details.open || !photo || preview.dataset.source === photo) return;
+      preview.replaceChildren(photoPreview(photo));
+      if (pdfPattern.test(photo)) {
+        const link = document.createElement("a");
+        link.href = photo;
+        link.download = "my-v1.pdf";
+        link.textContent = "Download my V1 PDF";
+        preview.append(link);
+      }
+      preview.dataset.source = photo;
     }
 
     function renderGallery() {
       renderGallerySamples();
+      const myV1 = document.getElementById("galleryV1");
+      myV1.hidden = mode !== "inperson" || !choices[0]?.photo;
+      if (myV1.hidden) myV1.open = false;
+      document.getElementById("galleryV1Sharing").textContent = gallery.has(galleryPostId)
+        ? "You added this composition to the Gallery anonymously."
+        : "This is your own composition. It only appears in the Gallery if you choose Add V1 to Gallery.";
+      showGalleryV1();
       const list = document.getElementById("galleryList");
       list.replaceChildren();
       document.querySelector('[onclick="publishToGallery()"]').disabled = Boolean(galleryPostId);
@@ -2007,6 +2058,10 @@
       document.getElementById("lockV1Btn").textContent = "Save & Open Gallery";
 
       document.getElementById("savedVersions").open = false;
+      document.getElementById("galleryV1").open = false;
+      const galleryV1Preview = document.getElementById("galleryV1Preview");
+      galleryV1Preview.replaceChildren();
+      delete galleryV1Preview.dataset.source;
       hideDecisionExport();
       document.getElementById("v1GhostToggle").checked = false;
       validateStep1Gate();
