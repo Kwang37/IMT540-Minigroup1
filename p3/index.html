@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>4SQUARES Workspace</title>
-  <link rel="stylesheet" href="../assets/workspace.css?v=e3753130cf">
+  <link rel="stylesheet" href="../assets/workspace.css?v=bc8c2a0f32">
 </head>
 <body data-flow="p3">
 
@@ -112,30 +112,46 @@
           </div>
 
           <div class="board-surface">
-            <p class="touch-hint">Drag a square with one finger. To resize it, start on the square and pinch with two fingers.</p>
+            <p class="touch-hint">Drag to move a square. Tap it for size and rotation controls, or pinch with two fingers to resize.</p>
           <div
             id="board"
             class="canvas-frame"
             role="application"
-            aria-label="Four squares composition board. Select a square with Tab, move with Arrow keys, resize with plus or minus, rotate with R."
+            aria-label="Four squares composition board. Select a square with Tab, move with Arrow keys, resize with plus or minus, rotate with left or right bracket."
             data-click="on-board-background-tap"
           >
             <div id="squaresContainer"></div>
           </div>
-            <div id="tiltControl" class="tilt-bar" role="toolbar" aria-label="Square rotation" data-pointerdown="event-stop-propagation" hidden>
-              <button type="button" data-click="rotate-active-square" aria-label="Rotate counterclockwise 15 degrees">-15°</button>
-              <output id="tiltReadout">0°</output>
-              <button type="button" data-click="rotate-active-square-2" aria-label="Rotate clockwise 15 degrees">+15°</button>
-              <button type="button" data-click="reset-active-tilt">0°</button>
+            <div id="canvasEditControls" class="canvas-edit-controls" hidden>
+              <div class="canvas-edit-actions" role="group" aria-label="Canvas history">
+                <button id="undoCanvasBtn" type="button" class="btn" data-click="undo-canvas" aria-disabled="true" aria-keyshortcuts="Control+Z Meta+Z" title="Ctrl/⌘+Z">Undo</button>
+                <button id="redoCanvasBtn" type="button" class="btn" data-click="redo-canvas" aria-disabled="true" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z" title="Ctrl/⌘+Shift+Z">Redo</button>
+                <span id="canvasHistoryStatus" class="sr-only" role="status"></span>
+              </div>
+              <div id="tiltControl" class="square-edit-controls" role="group" aria-labelledby="squareEditLabel" hidden>
+                <strong id="squareEditLabel"></strong>
+                <div class="square-edit-group" role="group" aria-label="Rotation">
+                  <span>Rotation</span>
+                  <button type="button" class="btn" data-click="rotate-active-square" aria-label="Rotate counterclockwise 15 degrees">−15°</button>
+                  <button type="button" class="btn" data-click="reset-active-tilt" aria-label="Reset rotation">0°</button>
+                  <button type="button" class="btn" data-click="rotate-active-square-2" aria-label="Rotate clockwise 15 degrees">+15°</button>
+                  <output id="tiltReadout" aria-label="Current rotation">0°</output>
+                </div>
+                <div class="square-edit-group" role="group" aria-label="Size">
+                  <span>Size</span>
+                  <button id="shrinkSquareBtn" type="button" class="btn" data-click="shrink-square" aria-label="Make selected square smaller">−</button>
+                  <output id="squareSizeReadout" aria-label="Size relative to the starting size">100%</output>
+                  <button id="growSquareBtn" type="button" class="btn" data-click="grow-square" aria-label="Make selected square larger">+</button>
+                </div>
+              </div>
             </div>
-
           </div>
 
           <!-- Version & Working Draft Management -->
           <section id="choicesTray" class="choices-bar" aria-label="Version management" hidden>
             <div class="store-actions">
               <button type="button" id="saveNewVersionBtn" class="btn btn-primary" data-click="store-new-choice">Save New Version</button>
-              <button id="discardDraftBtn" type="button" class="btn" data-click="discard-working-draft" hidden>Discard Changes</button>
+              <button id="discardDraftBtn" type="button" class="btn discard-draft-secondary" data-click="confirm-discard-draft" hidden>Discard Changes</button>
               <span id="versionSaveStatus" class="meta-note" role="status"></span>
             </div>
             <details id="savedVersions">
@@ -312,6 +328,6 @@
     </details>
   </div>
 
-  <script type="module" src="../assets/workspace.js?v=195bd9db62"></script>
+  <script type="module" src="../assets/workspace.js?v=bc8c2a0f32"></script>
 </body>
 </html>

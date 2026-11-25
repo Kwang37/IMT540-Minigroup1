@@ -19,6 +19,9 @@ const isP3 = document.body.dataset.flow === "p3";
     let activeChoiceIdx = 0;
     let keptChoiceIdx = 0;
     let workingSquares = [];
+    const HISTORY_LIMIT = 20;
+    const undoStack = [];
+    const redoStack = [];
     let activeSquareId = null;
     let squareGesture = null;
     const resizeCornerAngles = { nw: -135, ne: -45, se: 45, sw: 135 };
@@ -609,9 +612,11 @@ const isP3 = document.body.dataset.flow === "p3";
       const heading = document.getElementById("tutorialTitle");
       document.getElementById("tutorialProgress").textContent = `Tutorial ${index + 1} of ${tutorialPages.length}`;
       heading.textContent = title;
+      const p3Controls = isP3 && index === 1;
       const includePhoto = !isP3 && (mode === "inperson" || !tutorialFromWorkspace) && index === 1;
       document.getElementById("tutorialBody").textContent = includePhoto
         ? body + " For in-person work, arrange physical squares and add a photo or PDF."
+        : p3Controls ? "Drag to move a square. Select it to see size and rotation controls. With a keyboard, use Tab to focus a square, arrow keys to move, [ or ] to rotate, and + or − to resize."
         : body;
       document.getElementById("tutorialBack").hidden = index === 0;
       document.getElementById("tutorialContinue").textContent = index === tutorialPages.length - 1
@@ -682,6 +687,7 @@ const isP3 = document.body.dataset.flow === "p3";
     }
 
     function startBlankSession() {
+      clearCanvasHistory();
       photoRequest++;
       explorations = [];
       reviewedArrangement = null;
@@ -760,6 +766,7 @@ const isP3 = document.body.dataset.flow === "p3";
         return;
       }
       explorations.push(clone(workingSquares));
+      clearCanvasHistory();
       activeSquareId = null;
       goToStep(explorations.length === EXPLORATION_COUNT ? 1.1 : 1);
       if (!persistSessionState() && currentStep === 1) {
@@ -1002,6 +1009,7 @@ const isP3 = document.body.dataset.flow === "p3";
         if (stepNumber === 1.1 && explorations.length < EXPLORATION_COUNT) return;
         if (stepNumber === 1.25 && reviewedArrangement === null) return;
       }
+      if (currentStep !== stepNumber) clearCanvasHistory();
       currentStep = stepNumber;
 
       [1, 2, 3, 4].forEach(n => {
@@ -1141,7 +1149,14 @@ const isP3 = document.body.dataset.flow === "p3";
       document.getElementById("versionSaveStatus").textContent = pending ? "Unsaved changes" : "";
     }
 
+    function confirmDiscardWorkingDraft() {
+      if (isWorkingDraftDirty && window.confirm("Discard all unsaved changes to this arrangement?")) {
+        discardWorkingDraft();
+      }
+    }
+
     function discardWorkingDraft() {
+      clearCanvasHistory();
       workingSquares = clone(choices[activeChoiceIdx].squares);
       workingPhoto = choices[activeChoiceIdx].photo || "";
       syncPhotoWorkspace();
@@ -1175,6 +1190,7 @@ const isP3 = document.body.dataset.flow === "p3";
         const discard = window.confirm("Discard unsaved working draft changes and switch version?");
         if (!discard) return;
       }
+      clearCanvasHistory();
       activeChoiceIdx = idx;
       workingSquares = clone(choices[idx].squares);
       workingPhoto = choices[idx].photo || "";
@@ -1247,6 +1263,11 @@ const isP3 = document.body.dataset.flow === "p3";
               renderBoard();
             }
           });
+          if (isP3) btn.addEventListener("focus", () => {
+            if (!canModifyBoard() || activeSquareId === sq.id) return;
+            activeSquareId = sq.id;
+            renderBoard();
+          });
           btn.addEventListener("keydown", (e) => handleSquareKeydown(e, sq.id));
           squareButtonMap.set(sq.id, btn);
           container.appendChild(btn);
@@ -1262,7 +1283,63 @@ const isP3 = document.body.dataset.flow === "p3";
       });
 
       updateTiltToolbar();
+      if (isP3) updateCanvasHistoryControls();
     }
+
+    function clearCanvasHistory() {
+      undoStack.length = 0;
+      redoStack.length = 0;
+      if (isP3) document.getElementById("canvasHistoryStatus").textContent = "";
+    }
+
+    function commitSquareEdit(square, nextSquare) {
+      if (squaresEqual([square], [nextSquare])) return;
+      if (isP3) {
+        undoStack.push(clone(workingSquares));
+        if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+        redoStack.length = 0;
+        document.getElementById("canvasHistoryStatus").textContent = "";
+      }
+      Object.assign(square, nextSquare);
+      updateDraftStatusUI();
+    }
+
+    function updateCanvasHistoryControls() {
+      document.getElementById("canvasEditControls").hidden = !canModifyBoard();
+      document.getElementById("undoCanvasBtn").setAttribute("aria-disabled", String(!undoStack.length));
+      document.getElementById("redoCanvasBtn").setAttribute("aria-disabled", String(!redoStack.length));
+    }
+
+    function restoreCanvasEdit(reapply) {
+      if (!canModifyBoard() || squareGesture) return;
+      const from = reapply ? redoStack : undoStack;
+      const to = reapply ? undoStack : redoStack;
+      if (!from.length) return;
+      to.push(clone(workingSquares));
+      workingSquares = from.pop();
+      updateDraftStatusUI();
+      renderBoard();
+      document.getElementById("canvasHistoryStatus").textContent =
+        reapply ? "Canvas edit redone." : "Canvas edit undone.";
+    }
+
+    function changeActiveSquareSize(direction) {
+      if (!canModifyBoard() || squareGesture) return;
+      const square = workingSquares.find(item => item.id === activeSquareId);
+      if (!square) return;
+      const nextSquare = { ...square };
+      resizeSquare(nextSquare, direction);
+      commitSquareEdit(square, nextSquare);
+      renderBoard();
+    }
+
+    if (isP3) document.getElementById("workspaceShell").addEventListener("keydown", event => {
+      if (!canModifyBoard() || squareGesture || event.altKey || !(event.metaKey || event.ctrlKey) ||
+          event.target.closest("textarea, input, select, [contenteditable]") ||
+          event.key.toLowerCase() !== "z") return;
+      event.preventDefault();
+      restoreCanvasEdit(event.shiftKey);
+    });
 
     function canModifyBoard() {
       return (currentStep === 1 && !v1Locked) || (currentStep === 3 && !workingPhoto);
@@ -1293,7 +1370,7 @@ const isP3 = document.body.dataset.flow === "p3";
       const button = e.target.closest("button.square-node");
       const square = workingSquares.find(sq => squareButtonMap.get(sq.id) === button);
       if (!square || !gestureBoard.clientWidth || !gestureBoard.clientHeight) return;
-      const handle = e.pointerType === "touch" ? null : e.target.closest(".square-resize-handle");
+      const handle = !isP3 && e.pointerType === "touch" ? null : e.target.closest(".square-resize-handle");
       const cornerAngle = handle ? resizeCornerAngles[handle.dataset.corner] : undefined;
       e.preventDefault();
       activeSquareId = square.id;
@@ -1336,8 +1413,7 @@ const isP3 = document.body.dataset.flow === "p3";
       if (!g?.points.has(e.pointerId)) return;
       if (!canceled && canModifyBoard() && workingSquares.includes(g.square)) {
         updateSquareGesture(e);
-        Object.assign(g.square, g.preview);
-        updateDraftStatusUI();
+        commitSquareEdit(g.square, g.preview);
         if (g.pointerType === "mouse") g.button.focus({ preventScroll: true });
       }
       squareGesture = null;
@@ -1354,30 +1430,26 @@ const isP3 = document.body.dataset.flow === "p3";
 
     function handleSquareKeydown(e, id) {
       const sq = workingSquares.find(s => s.id === id);
-      if (!sq) return;
+      if (!sq || !canModifyBoard() || e.ctrlKey || e.metaKey || e.altKey || squareGesture) return;
 
-      if (!canModifyBoard() || e.ctrlKey || e.metaKey || e.altKey) return;
-
+      const next = { ...sq };
       const step = e.shiftKey ? 5 : 2;
-      let handled = true;
+      if (e.key === "ArrowLeft") next.x -= step;
+      else if (e.key === "ArrowRight") next.x += step;
+      else if (e.key === "ArrowUp") next.y -= step;
+      else if (e.key === "ArrowDown") next.y += step;
+      else if (e.key === "+" || e.key === "=") resizeSquare(next, 1);
+      else if (e.key === "-" || e.key === "_") resizeSquare(next, -1);
+      else if (isP3 && e.key === "[") next.rot = Math.max(-45, next.rot - 15);
+      else if (isP3 && e.key === "]") next.rot = Math.min(45, next.rot + 15);
+      else if (e.key === "r" || e.key === "R") next.rot = ((next.rot + 15 + 45) % 90) - 45;
+      else return;
 
-      if (e.key === "ArrowLeft") sq.x -= step;
-      else if (e.key === "ArrowRight") sq.x += step;
-      else if (e.key === "ArrowUp") sq.y -= step;
-      else if (e.key === "ArrowDown") sq.y += step;
-      else if (e.key === "+" || e.key === "=") resizeSquare(sq, 1);
-      else if (e.key === "-" || e.key === "_") resizeSquare(sq, -1);
-      else if (e.key === "r" || e.key === "R") sq.rot = ((sq.rot + 15 + 45) % 90) - 45;
-      else handled = false;
-
-      if (handled) {
-        e.preventDefault();
-        Object.assign(sq, constrainSquarePosition(sq, sq.x, sq.y));
-        activeSquareId = id;
-        updateDraftStatusUI();
-        renderBoard();
-        squareButtonMap.get(id)?.focus();
-      }
+      e.preventDefault();
+      Object.assign(next, constrainSquarePosition(next, next.x, next.y));
+      activeSquareId = id;
+      commitSquareEdit(sq, next);
+      renderBoard();
     }
 
     function onBoardBackgroundTap(e) {
@@ -1394,28 +1466,35 @@ const isP3 = document.body.dataset.flow === "p3";
       if (!sq) return;
       const size = squareSize(sq);
       document.getElementById("tiltReadout").value = `${sq.rot}°`;
-      bar.style.left = `${Math.max(18, Math.min(82, sq.x + size / 2))}%`;
-      bar.style.top = `${sq.y > 12 ? sq.y - 9 : sq.y + size + 3}%`;
+      if (isP3) {
+        document.getElementById("squareEditLabel").textContent = `Square ${sq.id}`;
+        document.getElementById("squareSizeReadout").value = Math.round(size / DEFAULT_SQUARE_SIZE * 100) + "%";
+        document.getElementById("shrinkSquareBtn").setAttribute("aria-disabled", String(size <= MIN_SQUARE_SIZE));
+        document.getElementById("growSquareBtn").setAttribute("aria-disabled", String(size >= MAX_SQUARE_SIZE));
+      } else {
+        bar.style.left = `${Math.max(18, Math.min(82, sq.x + size / 2))}%`;
+        bar.style.top = `${sq.y > 12 ? sq.y - 9 : sq.y + size + 3}%`;
+      }
     }
 
     function rotateActiveSquare(delta, event) {
-      if (!canModifyBoard()) return;
+      if (!canModifyBoard() || squareGesture) return;
       const sq = workingSquares.find(s => s.id === activeSquareId);
       if (!sq) return;
-      sq.rot = Math.max(-45, Math.min(45, sq.rot + delta));
-      Object.assign(sq, constrainSquarePosition(sq, sq.x, sq.y));
-      updateDraftStatusUI();
+      const next = { ...sq, rot: Math.max(-45, Math.min(45, sq.rot + delta)) };
+      Object.assign(next, constrainSquarePosition(next, next.x, next.y));
+      commitSquareEdit(sq, next);
       renderBoard();
       if (event?.detail === 0) event.currentTarget.focus({ preventScroll: true });
     }
 
     function resetActiveTilt(event) {
-      if (!canModifyBoard()) return;
+      if (!canModifyBoard() || squareGesture) return;
       const sq = workingSquares.find(s => s.id === activeSquareId);
       if (!sq) return;
-      sq.rot = 0;
-      Object.assign(sq, constrainSquarePosition(sq, sq.x, sq.y));
-      updateDraftStatusUI();
+      const next = { ...sq, rot: 0 };
+      Object.assign(next, constrainSquarePosition(next, next.x, next.y));
+      commitSquareEdit(sq, next);
       renderBoard();
       if (event?.detail === 0) event.currentTarget.focus({ preventScroll: true });
     }
@@ -1745,6 +1824,11 @@ const isP3 = document.body.dataset.flow === "p3";
       "document-get-element-by-id-2": () => document.getElementById('compositionUpload').click(),
       "store-new-choice": () => storeNewChoice(),
       "discard-working-draft": () => discardWorkingDraft(),
+      "confirm-discard-draft": () => confirmDiscardWorkingDraft(),
+      "undo-canvas": () => restoreCanvasEdit(false),
+      "redo-canvas": () => restoreCanvasEdit(true),
+      "shrink-square": () => changeActiveSquareSize(-1),
+      "grow-square": () => changeActiveSquareSize(1),
       "go-to-step-2": () => goToStep(3),
       "save-exploration": () => saveExploration(),
       "lock-baseline-v1": () => lockBaselineV1(),
