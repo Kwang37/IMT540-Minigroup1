@@ -395,6 +395,8 @@ const isP3 = document.body.dataset.flow === "p3";
     }
 
     let markedSample = null;
+    let savedSamples = [];
+    let variationSkipped = false;
     let compareRequested = false;
 
     function gallerySampleCard(index) {
@@ -402,7 +404,35 @@ const isP3 = document.body.dataset.flow === "p3";
       return createFlipCard(title, "Sample / AI-generated", sampleReadings[selectedConcept][index], layout);
     }
 
+    function compositionReference(label, squares) {
+      const section = document.createElement("section");
+      const heading = document.createElement("h3");
+      heading.textContent = label;
+      const board = document.createElement("div");
+      board.className = "canvas-frame";
+      board.setAttribute("role", "img");
+      board.setAttribute("aria-label", label + " composition");
+      squares.forEach(square => {
+        const shape = document.createElement("div");
+        shape.className = "square-node";
+        placeSquare(shape, square);
+        board.append(shape);
+      });
+      section.append(heading, board);
+      return section;
+    }
+
     function renderReflectionReference() {
+      if (isP3) {
+        const cards = savedSamples.map(gallerySampleCard);
+        document.getElementById("reflectionReferenceCard").replaceChildren(
+          compositionReference("Your V1", choices[0].squares), ...cards
+        );
+        document.getElementById("secondReflectionPrompt").textContent = cards.length
+          ? "What did comparing these arrangements help you notice about your own?"
+          : "What did the Gallery help you notice about your own arrangement?";
+        return;
+      }
       const details = document.getElementById("reflectionReference");
       const container = document.getElementById("reflectionReferenceCard");
       const hasSavedCard = mode === "online" && Boolean(galleryExamples[selectedConcept]?.[markedSample]);
@@ -419,14 +449,14 @@ const isP3 = document.body.dataset.flow === "p3";
     function renderGallerySamples() {
       const grid = document.getElementById("gallerySamples");
       grid.replaceChildren();
-      document.getElementById("galleryTitle").textContent = selectedConcept + " Gallery";
+      document.getElementById("galleryTitle").textContent = (isP3 ? "3. Explore Gallery · " : "") + selectedConcept + (isP3 ? "" : " Gallery");
       document.getElementById("sampleSaveHelp").hidden = mode !== "online";
       const status = document.getElementById("sampleSaveStatus");
       const examples = galleryExamples[selectedConcept] || [];
       status.textContent = "";
       const marks = [];
       const updateMarks = () => marks.forEach((button, index) => {
-        const saved = index === markedSample;
+        const saved = isP3 ? savedSamples.includes(index) : index === markedSample;
         button.setAttribute("aria-pressed", String(saved));
         button.textContent = saved ? "Saved for Reflection ✓" : "Save for Reflection";
       });
@@ -438,6 +468,18 @@ const isP3 = document.body.dataset.flow === "p3";
           mark.className = "btn btn-sm sample-save";
           marks.push(mark);
           mark.onclick = () => {
+            if (isP3) {
+              const saved = savedSamples.includes(index);
+              if (!saved && savedSamples.length >= 2) {
+                status.textContent = "Remove a saved example before adding another.";
+                return;
+              }
+              savedSamples = saved ? savedSamples.filter(item => item !== index) : [...savedSamples, index];
+              status.textContent = saved ? `Removed “${title}”.` : `Saved “${title}” for reflection.`;
+              updateMarks();
+              persistSessionState();
+              return;
+            }
             const previousTitle = examples[markedSample]?.[0];
             markedSample = markedSample === index ? null : index;
             updateMarks();
@@ -697,6 +739,8 @@ const isP3 = document.body.dataset.flow === "p3";
       galleryPostId = null;
       inspiration.clear();
       markedSample = null;
+      savedSamples = [];
+      variationSkipped = false;
       compareRequested = false;
       document.getElementById("reflectionHelp").open = false;
       document.getElementById("draftStatus").textContent = "";
@@ -892,6 +936,7 @@ const isP3 = document.body.dataset.flow === "p3";
     }
 
     function finishReflection(redesign) {
+      if (isP3) variationSkipped = !redesign;
       const text = document.getElementById("understandingShiftField").value.trim();
       if (!text) {
         document.getElementById("understandingShiftField").focus();
@@ -912,18 +957,29 @@ const isP3 = document.body.dataset.flow === "p3";
       const reflectionReady = !document.getElementById("reflectionNext").hidden;
       const availableSteps = {
         1: true,
+        1.25: reviewedArrangement !== null || v1Locked,
         1.5: v1Locked,
         2: v1Locked,
         3: currentStep === 2 ? reflectionReady : Boolean(secondReflection),
         4: currentStep === 2 ? reflectionReady && Boolean(secondReflection) : Boolean(secondReflection)
       };
-      const activeStep = currentStep === 1.1 || currentStep === 1.25 ? 1 : currentStep;
+      const activeStep = currentStep === 1.1 || (!isP3 && currentStep === 1.25) ? 1 : currentStep;
       for (const button of mobileProgress.querySelectorAll("[data-step]")) {
         const step = Number(button.dataset.step);
         const active = step === activeStep;
         button.disabled = !active && !availableSteps[step];
         if (active) button.setAttribute("aria-current", "step");
         else button.removeAttribute("aria-current");
+      }
+      if (isP3) {
+        const labels = {1: "1 of 5 · Create", 1.1: "1 of 5 · Pick V1", 1.25: "2 of 5 · Reflect before Gallery",
+          1.5: "3 of 5 · Explore Gallery", 2: "4 of 5 · Reflect & Decide", 3: "4 of 5 · Try a variation", 4: "5 of 5 · Compare & Export"};
+        document.getElementById("mobileStageLabel").textContent = "Step " + labels[currentStep];
+        const label = variationSkipped ? "Variation skipped (optional)" : "Try a variation (optional)";
+        document.getElementById("stepNav3").textContent = label;
+        document.getElementById("stepNav3").classList.toggle("is-skipped", variationSkipped);
+        mobileProgress.querySelector('[data-step="3"]').textContent = label;
+        return;
       }
       const showsComparison = mode === "online" && choices.length > 1 &&
         (currentStep !== 4 || compareRequested);
@@ -1014,13 +1070,18 @@ const isP3 = document.body.dataset.flow === "p3";
 
       [1, 2, 3, 4].forEach(n => {
         const navItem = document.getElementById(`stepNav${n}`);
-        if (n === currentStep || (n === 1 && (currentStep === 1.1 || currentStep === 1.25))) {
+        if (n === currentStep || (n === 1 && (currentStep === 1.1 || (!isP3 && currentStep === 1.25)))) {
           navItem.setAttribute("aria-current", "step");
         } else {
           navItem.removeAttribute("aria-current");
         }
       });
 
+      if (isP3) {
+        const pre = document.getElementById("stepNavPre");
+        if (currentStep === 1.25) pre.setAttribute("aria-current", "step");
+        else pre.removeAttribute("aria-current");
+      }
       const isGallery = currentStep === 1.5;
       const galleryNav = document.getElementById("stepNavGallery");
       if (isGallery) galleryNav.setAttribute("aria-current", "step");
@@ -1048,7 +1109,7 @@ const isP3 = document.body.dataset.flow === "p3";
       if (!isP3) document.getElementById("inPersonCreatePanel").hidden = !(inPerson && isCreation);
       document.getElementById("onlineCreateHint").textContent =
         `Arrange four squares to express ${selectedConcept}. Try changing a gap or letting a square extend past the frame.`;
-      document.getElementById("stepNav4").textContent = inPerson || choices.length < 2 || isSummary ? "4. Summary & Export" : "4. Compare & Export";
+      if (!isP3) document.getElementById("stepNav4").textContent = inPerson || choices.length < 2 || isSummary ? "4. Summary & Export" : "4. Compare & Export";
       document.getElementById("finalReasonLabel").textContent = !isCompare
         ? "Why did you keep this arrangement? (Optional)"
         : "Why keep this version over the other saved choices?";
@@ -1060,7 +1121,7 @@ const isP3 = document.body.dataset.flow === "p3";
       document.getElementById("canvasView").hidden = isCompare;
       document.getElementById("compareView").hidden = !isCompare;
 
-      document.getElementById("step1Title").textContent = currentStep === 1.25 ? "Reflection 1" : "Make Your First Composition";
+      document.getElementById("step1Title").textContent = currentStep === 1.25 ? (isP3 ? "2. Reflect Before Gallery" : "Reflection 1") : "Make Your First Composition";
       document.getElementById("panelStep1").hidden = currentStep !== 1.25;
       document.getElementById("panelStep2").hidden = currentStep !== 2;
       document.getElementById("panelStep3").hidden = currentStep !== 3;
@@ -1092,6 +1153,7 @@ const isP3 = document.body.dataset.flow === "p3";
         hideDecisionExport();
         document.getElementById("journeyBefore").textContent = firstReflection?.text || "";
         document.getElementById("journeyAfter").textContent = secondReflection?.text || "";
+        if (isP3) renderJourneyReferences();
         if (isCompare) renderCompareGallery();
         else document.getElementById("selectedSummaryBadge").textContent =
           `Kept: ${choices[keptChoiceIdx]?.title || "V1"}`;
@@ -1162,6 +1224,7 @@ const isP3 = document.body.dataset.flow === "p3";
       syncPhotoWorkspace();
       updateDraftStatusUI();
       renderBoard();
+      if (isP3) persistSessionState();
     }
 
     function renderChoicesList() {
@@ -1302,6 +1365,7 @@ const isP3 = document.body.dataset.flow === "p3";
       }
       Object.assign(square, nextSquare);
       updateDraftStatusUI();
+      if (isP3) persistSessionState();
     }
 
     function updateCanvasHistoryControls() {
@@ -1317,6 +1381,7 @@ const isP3 = document.body.dataset.flow === "p3";
       if (!from.length) return;
       to.push(clone(workingSquares));
       workingSquares = from.pop();
+      if (isP3) persistSessionState();
       updateDraftStatusUI();
       renderBoard();
       document.getElementById("canvasHistoryStatus").textContent =
@@ -1594,6 +1659,17 @@ const isP3 = document.body.dataset.flow === "p3";
       }
     }
 
+    function renderJourneyReferences() {
+      const baseline = choices[0];
+      const kept = choices[keptChoiceIdx];
+      if (!baseline || !kept) return;
+      document.getElementById("journeyBaseline").replaceChildren(compositionReference("Your V1", baseline.squares));
+      document.getElementById("journeyFinal").replaceChildren(compositionReference("Final choice · " + kept.title, kept.squares));
+      document.getElementById("finalReasonLabel").textContent = choices.length > 1
+        ? "In one sentence, why did you choose this version?"
+        : "After viewing the Gallery, what confirmed your decision to keep V1?";
+    }
+
     function buildSessionPayload() {
       const kept = choices[keptChoiceIdx];
       return {
@@ -1604,6 +1680,7 @@ const isP3 = document.body.dataset.flow === "p3";
         reviewedArrangement,
         explorationDraft: mode === "online" && !v1Locked ? workingSquares : null,
         markedSample,
+        ...(isP3 && { savedSamples, variationSkipped, activeChoiceIdx, workingDraft: workingSquares }),
         compareRequested,
         concept: selectedConcept,
         firstReflection,
@@ -1627,8 +1704,11 @@ const isP3 = document.body.dataset.flow === "p3";
     function persistSessionState() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSessionPayload()));
+        if (isP3) document.getElementById("localSaveStatus").textContent =
+          "Saved locally · " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
         return true;
       } catch {
+        if (isP3) document.getElementById("localSaveStatus").textContent = "Could not save locally. Export before closing.";
         return false;
       }
     }
@@ -1643,7 +1723,7 @@ const isP3 = document.body.dataset.flow === "p3";
       try {
         const draft = JSON.parse(localStorage.getItem(STORAGE_KEY));
         if (!draft?.versionsHistory?.length || (isP3 && draft.participationMode !== "online")) return null;
-        return draft.firstReflection || draft.explorations?.length ? draft : null;
+        return draft.firstReflection || draft.explorations?.length || (isP3 && draft.explorationDraft?.length) ? draft : null;
       } catch {
         return null;
       }
@@ -1666,15 +1746,23 @@ const isP3 = document.body.dataset.flow === "p3";
       if (!firstReflection) {
         workingSquares = clone(draft.explorationDraft || explorations[reviewedArrangement] || explorations.at(-1));
         document.getElementById("goalField").value = draft.initialGoal || "";
-        goToStep(explorations.length === EXPLORATION_COUNT ? 1.1 : 1);
+        if (isP3) document.getElementById("explorationReason").value = draft.initialGoal || "";
+        goToStep(isP3 && draft.currentStep === 1.25 && reviewedArrangement !== null ? 1.25 : explorations.length === EXPLORATION_COUNT ? 1.1 : 1);
         return;
       }
       secondReflection = draft.secondReflection;
       markedSample = draft.markedSample ?? null;
+      savedSamples = (draft.savedSamples || (markedSample === null ? [] : [markedSample]))
+        .filter(index => Number.isInteger(index) && galleryExamples[selectedConcept]?.[index]).slice(0, 2);
+      variationSkipped = draft.variationSkipped ?? Boolean(draft.secondReflection && draft.currentStep === 4 && choices.length === 1);
+      if (isP3 && draft.currentStep === 3 && draft.workingDraft?.length) {
+        workingSquares = clone(draft.workingDraft);
+        activeChoiceIdx = draft.activeChoiceIdx ?? 0;
+      }
       compareRequested = Boolean(draft.compareRequested);
       galleryPostId = draft.galleryPostId;
       (draft.inspirationIds || []).forEach(id => inspiration.add(id));
-      workingSquares = clone(choices[0].squares);
+      if (!isP3 || draft.currentStep !== 3 || !draft.workingDraft?.length) workingSquares = clone(choices[0].squares);
       workingPhoto = choices[0].photo || "";
       keptChoiceIdx = draft.keptChoiceIdx ?? 0;
       v1Locked = true;
@@ -1692,11 +1780,15 @@ const isP3 = document.body.dataset.flow === "p3";
       validateStep2Gate();
       const resumeStep = secondReflection && draft.currentStep === 3 ? 3
         : secondReflection && secondReflection.text === draft.reflectionDraft ? 4
-        : draft.reflectionDraft ? 2 : 1.5;
+        : draft.reflectionDraft || (isP3 && draft.currentStep === 2) ? 2 : 1.5;
       goToStep(resumeStep);
     }
 
     function resetSessionStorage() {
+      if (isP3) {
+        document.getElementById("resetDialog").close();
+        document.getElementById("localSaveStatus").textContent = "Progress saves in this browser.";
+      }
       document.querySelector(".session-actions").open = false;
       try { localStorage.removeItem(STORAGE_KEY); } catch {}
       startBlankSession();
@@ -1711,6 +1803,7 @@ const isP3 = document.body.dataset.flow === "p3";
       document.getElementById("selectedSummaryBadge").hidden = false;
       document.getElementById("decisionPanel").hidden = false;
       hideDecisionExport();
+      if (isP3) renderJourneyReferences();
       document.getElementById("finalReasonLabel").focus();
     }
 
@@ -1808,6 +1901,8 @@ const isP3 = document.body.dataset.flow === "p3";
       "navigate-mobile-step-3": () => navigateMobileStep(3),
       "navigate-mobile-step-4": () => navigateMobileStep(4),
       "navigate-mobile-step-5": () => navigateMobileStep(1.5),
+      "open-reset-dialog": () => document.getElementById("resetDialog").showModal(),
+      "navigate-pre-reflection": () => goToStep(1.25),
       "reset-session-storage": () => resetSessionStorage(),
       "go-to-step": () => goToStep(2),
       "scroll-samples": () => scrollSamples(-1),
@@ -1867,9 +1962,9 @@ const isP3 = document.body.dataset.flow === "p3";
 
     const inputActions = {
       "save-exploration-reason": () => saveExplorationReason(),
-      "validate-step1-gate": () => validateStep1Gate(),
-      "validate-step2-gate": () => validateStep2Gate(),
-      "hide-decision-export": () => hideDecisionExport(),
+      "validate-step1-gate": () => { validateStep1Gate(); if (isP3) persistSessionState(); },
+      "validate-step2-gate": () => { validateStep2Gate(); if (isP3) persistSessionState(); },
+      "hide-decision-export": () => { hideDecisionExport(); if (isP3) persistSessionState(); },
     };
 
     for (const [event, actions] of Object.entries({

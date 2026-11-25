@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>4SQUARES Workspace</title>
-  <link rel="stylesheet" href="../assets/workspace.css?v=bc8c2a0f32">
+  <link rel="stylesheet" href="../assets/workspace.css?v=571b400add">
 </head>
 <body data-flow="p3">
 
@@ -58,27 +58,29 @@
 
       <nav class="desktop-progress" aria-label="Activity progress">
         <ol class="step-list">
-          <li id="stepNav1" class="step-item" aria-current="step">1. Make a Composition</li>
-          <li id="stepNavGallery" class="step-item">Gallery</li>
-          <li id="stepNav2" class="step-item">2. Reflection</li>
-          <li id="stepNav3" class="step-item">3. Try Another Arrangement</li>
-          <li id="stepNav4" class="step-item">4. Compare &amp; Export</li>
+          <li id="stepNav1" class="step-item" aria-current="step">1. Create &amp; Pick V1</li>
+          <li id="stepNavPre" class="step-item">2. Reflect Before Gallery</li>
+          <li id="stepNavGallery" class="step-item">3. Explore Gallery</li>
+          <li id="stepNav2" class="step-item">4. Reflect &amp; Decide</li>
+          <li id="stepNav3" class="step-item">Try a Variation (Optional)</li>
+          <li id="stepNav4" class="step-item">5. Compare &amp; Export</li>
         </ol>
       </nav>
 
       <nav class="mobile-progress" aria-label="Activity steps">
+        <details class="mobile-step-menu"><summary id="mobileStageLabel">Step 1 of 5</summary>
         <ol id="mobileStepList" class="step-list mobile-step-list">
-          <li><button type="button" class="btn" data-step="1" data-click="navigate-mobile-step">1. Make a Composition</button></li>
-          <li><button type="button" class="btn" data-step="2" data-click="navigate-mobile-step-2">2. Reflection</button></li>
-          <li><button type="button" class="btn" data-step="3" data-click="navigate-mobile-step-3">3. Try Another Arrangement</button></li>
-          <li><button type="button" class="btn" data-step="4" data-click="navigate-mobile-step-4">4. Compare &amp; Export</button></li>
+          <li><button type="button" class="btn" data-step="1" data-click="navigate-mobile-step">1. Create &amp; Pick V1</button></li>
+          <li><button type="button" class="btn" data-step="1.25" data-click="navigate-pre-reflection">2. Reflect Before Gallery</button></li>
+          <li><button type="button" class="btn" data-step="1.5" data-click="navigate-mobile-step-5">3. Explore Gallery</button></li>
+          <li><button type="button" class="btn" data-step="2" data-click="navigate-mobile-step-2">4. Reflect &amp; Decide</button></li>
+          <li><button type="button" class="btn" data-step="3" data-click="navigate-mobile-step-3">Try a Variation (Optional)</button></li>
+          <li><button type="button" class="btn" data-step="4" data-click="navigate-mobile-step-4">5. Compare &amp; Export</button></li>
         </ol>
-        <button type="button" class="btn mobile-gallery" data-step="1.5" data-click="navigate-mobile-step-5">Gallery</button>
+        </details>
       </nav>
 
-      <div class="desktop-reset">
-        <button type="button" class="btn" data-click="reset-session-storage">Reset Session</button>
-      </div>
+      <p id="localSaveStatus" class="meta-note" role="status">Progress saves in this browser.</p>
     </header>
 
     <main class="workspace-main">
@@ -92,7 +94,7 @@
           <button class="btn" type="button" data-click="scroll-samples">Previous Cards</button>
           <button class="btn" type="button" data-click="scroll-samples-2">Next Cards</button>
         </div>
-        <p id="sampleSaveHelp" class="meta-note" hidden>You can save one example for Reflection 2.<span id="sampleSaveStatus" class="sample-save-status" role="status"></span></p>
+        <p id="sampleSaveHelp" class="meta-note" hidden>Curated examples · Save up to two to compare during reflection.<span id="sampleSaveStatus" class="sample-save-status" role="status"></span></p>
         <div id="gallerySamples" class="sample-grid" tabindex="0" role="region" aria-label="Six example compositions"></div>
       </section>
       <!-- LEFT COLUMN: BOARD OR COMPARISON GALLERY -->
@@ -212,7 +214,6 @@
 
           <button id="backToComposition" type="button" class="btn" data-click="go-to-step-4" hidden>Back to Composition</button>
           <div>
-            <h3>Reflection 1 · Before the Gallery</h3>
             <p id="reflectionIntro" class="meta-note">Look at your arrangement before seeing anyone else’s. A sentence or two is enough.</p>
           </div>
 
@@ -245,13 +246,13 @@
         <!-- STEP 2 PANEL -->
         <section id="panelStep2" class="panel-group" aria-labelledby="step2Title" hidden>
           <div class="reflection-heading">
-            <h2 id="step2Title" class="panel-title">Reflection 2</h2>
+            <h2 id="step2Title" class="panel-title">4. Reflect &amp; Decide</h2>
             <button type="button" class="btn reflection-link" data-click="go-to-step-5">Back to Gallery</button>
           </div>
-          <details id="reflectionReference" hidden>
-            <summary>Saved example</summary>
-            <div id="reflectionReferenceCard"></div>
-          </details>
+          <section id="reflectionReference" aria-label="Compositions to compare">
+            <div id="reflectionReferenceCard" class="reflection-reference-grid"></div>
+          </section>
+          <p class="meta-note">Ideas to look for: spacing, balance, contrast, or tension at the edges.</p>
           <div class="reflection-question">
             <label for="understandingShiftField" id="secondReflectionPrompt">What did the Gallery help you notice?</label>
             <textarea id="understandingShiftField" rows="4" data-input="validate-step2-gate"></textarea>
@@ -265,15 +266,13 @@
             </div>
           </section>
           <div class="draft-actions">
-            <button type="button" class="btn reflection-link" data-click="save-reflection-draft" aria-describedby="draftHint">Save draft</button>
-            <span id="draftHint" class="sr-only">Saves your notes in this browser.</span>
             <p id="draftStatus" class="meta-note" role="status"></p>
           </div>
         </section>
 
         <!-- STEP 3 PANEL -->
         <section id="panelStep3" class="panel-group" aria-labelledby="step3Title" hidden>
-          <h2 id="step3Title" class="panel-title">3. Try Another Arrangement</h2>
+          <h2 id="step3Title" class="panel-title">Try a Variation (Optional)</h2>
 
           <p id="variationInstruction" class="source-disclaimer">
             Try changing one thing you noticed during reflection. Move, turn, or resize a square. Choose <strong>Save New Version</strong> to keep both arrangements.
@@ -294,12 +293,13 @@
 
         <!-- STEP 4 PANEL -->
         <section id="panelStep4" class="panel-group" aria-labelledby="step4Title" hidden>
-          <h2 id="step4Title" class="panel-title">4. Thinking Journey &amp; Export</h2>
+          <h2 id="step4Title" class="panel-title">5. Compare &amp; Export</h2>
           <div class="journey-grid" id="thinkingJourney">
-            <section><h3>Reflection 1</h3><blockquote id="journeyBefore"></blockquote></section>
-            <section><h3>Reflection 2</h3><blockquote id="journeyAfter"></blockquote></section>
+            <section><h3>Before the Gallery</h3><div id="journeyBaseline"></div><blockquote id="journeyBefore"></blockquote></section>
+            <section><h3>What you noticed in the Gallery</h3><blockquote id="journeyAfter"></blockquote></section>
           </div>
 
+          <div id="journeyFinal"></div>
           <p id="selectedSummaryBadge" class="badge badge-active">Kept: V1</p>
 
           <button type="button" id="continueDecisionBtn" class="btn btn-primary" data-click="show-decision" aria-controls="decisionPanel" hidden>Continue to decision</button>
@@ -324,10 +324,20 @@
     </main>
     <details class="session-actions">
       <summary>Session options</summary>
-      <button type="button" class="btn" data-click="reset-session-storage">Reset Session</button>
+      <p class="meta-note">On a shared computer, export your work and reset before leaving.</p>
+      <button type="button" class="btn reset-danger" data-click="open-reset-dialog"><span aria-hidden="true">⚠</span> Reset Session</button>
     </details>
   </div>
 
-  <script type="module" src="../assets/workspace.js?v=bc8c2a0f32"></script>
+  <dialog id="resetDialog" aria-labelledby="resetTitle" aria-describedby="resetDescription">
+    <h2 id="resetTitle">Reset this session?</h2>
+    <p id="resetDescription">This deletes your arrangements, variations, and reflections from this browser. You can download a summary first.</p>
+    <div class="action-row">
+      <button type="button" class="btn" data-click="download-session-summary-txt">Export Summary</button>
+      <form method="dialog"><button type="submit" class="btn" autofocus>Cancel</button></form>
+      <button type="button" class="btn reset-danger" data-click="reset-session-storage">Delete session</button>
+    </div>
+  </dialog>
+  <script type="module" src="../assets/workspace.js?v=571b400add"></script>
 </body>
 </html>
