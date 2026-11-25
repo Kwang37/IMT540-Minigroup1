@@ -250,71 +250,71 @@ const isP3 = document.body.dataset.flow === "p3";
 
     const galleryExamples = {
       Tension: [
-        ["Held Apart", [[13,25,0],[30,37,0],[19,53,0],[69,44,19]]],
-        ["Near Collision", [[18,30,-12],[36,41,18],[56,51,-16],[69,66,13]]],
-        ["On Edge", [[18,65,0],[38,65,0],[58,65,0],[57,28,43]]],
-        ["Squeezed", [[16, 41, 0], [34, 41, 0], [51, 41, 0], [67, 41, 0]]],
+        ["Held Apart", [[5,23,0,28],[36,32,0,13],[18,57,0,19],[68,43,19,16]]],
+        ["Near Collision", [[11,24,-12,24],[34,40,18,18],[55,46,-16,27],[76,69,13,11]]],
+        ["On Edge", [[15,68,0,16],[36,68,0,16],[57,68,0,16],[49,-8,25,31]]],
+        ["Squeezed", [[-8,34,0,34],[29,43,0,15],[48,44,0,13],[65,34,0,34]]],
         ["Standoff", [[15, 25, 0], [15, 57, 0], [69, 25, 0], [69, 57, 0]]],
         ["Pulled Away", [[16, 43, 0], [35, 43, 0], [54, 43, 0], [72, 21, 28]]]
       ],
       Balance: [
-        ["Counterweight", [[18,26,0],[18,46,0],[18,66,0],[67,46,45]]],
-        ["Two Pairs", [[21,20,0],[40,20,0],[43,64,0],[62,64,0]]],
-        ["Balanced Around a Gap", [[42,14,0],[70,42,0],[42,70,0],[14,42,0]]],
+        ["Counterweight", [[16,21,0,14],[16,43,0,14],[16,65,0,14],[59,36,34,28]]],
+        ["Two Pairs", [[14,20,0,23],[42,26,0,11],[47,66,0,11],[64,60,0,23]]],
+        ["Balanced Around a Gap", [[42,13,0,16],[68,36,0,24],[42,71,0,16],[8,36,0,24]]],
         ["Mirror Pairs", [[18, 25, -20], [18, 60, 20], [66, 25, 20], [66, 60, -20]]],
-        ["Quiet Center", [[26, 31, 0], [41, 31, 0], [41, 49, 0], [56, 49, 0]]],
+        ["Quiet Center", [[25,31,0,22],[53,36,0,12],[35,55,0,12],[51,50,0,22]]],
         ["Corner Weights", [[13, 13, 0], [69, 13, 0], [13, 69, 0], [69, 69, 0]]]
       ],
       Chaos: [
-        ["Scatter", [[13,19,-24],[67,12,31],[42,50,42],[21,70,-12]]],
-        ["Collision", [[30,29,19],[43,39,-38],[51,46,13],[41,58,52]]],
-        ["Broken Sequence", [[14,64,17],[32,20,36],[54,49,-27],[70,19,4]]],
+        ["Scatter", [[-10,9,-24,33],[61,13,31,13],[36,44,42,26],[66,70,-12,20]]],
+        ["Collision", [[17,22,19,31],[36,32,-38,28],[50,44,13,18],[29,54,52,22]]],
+        ["Broken Sequence", [[10,61,17,14],[23,14,36,24],[48,49,-27,12],[66,13,4,30]]],
         ["Interrupted Grid", [[23, 23, 0], [59, 22, 24], [19, 66, -19], [48, 49, 43]]],
-        ["Uneven Drift", [[10, 29, -11], [28, 43, 36], [67, 47, -34], [52, 72, 14]]],
+        ["Uneven Drift", [[-7,18,-11,24],[21,41,36,14],[56,37,-34,29],[67,76,14,10]]],
         ["Crossing Paths", [[27, 21, 35], [54, 34, -30], [31, 53, -19], [62, 65, 39]]]
       ],
       Order: [
         ["Grid", [[25,25,0],[58,25,0],[25,58,0],[58,58,0]]],
-        ["Even Interval", [[9,42,0],[31,42,0],[53,42,0],[75,42,0]]],
-        ["Measured Steps", [[13,14,0],[31,32,0],[49,50,0],[67,68,0]]],
-        ["Neat Column", [[42, 8, 0], [42, 30, 0], [42, 52, 0], [42, 74, 0]]],
+        ["Even Interval", [[8,36,0,24],[35,42,0,12],[50,36,0,24],[77,42,0,12]]],
+        ["Measured Steps", [[12,12,0,10],[28,28,0,15],[44,44,0,20],[60,60,0,25]]],
+        ["Neat Column", [[36,-8,0,28],[41,28,0,18],[36,54,0,28],[41,90,0,18]]],
         ["Repeating Tilt", [[13, 25, 25], [39, 25, 25], [13, 59, 25], [39, 59, 25]]],
-        ["Right Angle", [[16, 22, 0], [16, 46, 0], [16, 70, 0], [40, 70, 0]]]
+        ["Right Angle", [[17,16,0,12],[17,35,0,12],[17,54,0,26],[50,54,0,12]]]
       ]
     };
 
     const sampleReadings = {
       Tension: [
-        "I read tension as pressure between a group and an outsider. I clustered three squares and kept one tilted across the gap.",
-        "Tension can feel like a collision that has not happened yet. I placed the squares close together at competing angles.",
-        "I wanted the feeling of something about to tip. One tilted square sits above a stable row.",
-        "The gaps shrink until the last two squares overlap. I wanted the row to feel compressed.",
+        "A large square anchors the cluster on the left. The smaller, tilted square across the gap looks held back by the space between them.",
+        "The squares crowd the center at competing angles. The small square at the end gives the collision a direction.",
+        "Three evenly spaced squares stabilize the bottom. The large square above is tilted and cropped to make its position feel precarious.",
+        "Two large squares press inward on two smaller ones. Cropping the left square makes the pressure feel as if it continues beyond the frame.",
         "I placed two pairs across a wide gap. The empty middle feels like a space neither side will cross.",
         "The tilted square breaks away from the row. I wanted the others to seem as if they were holding it back."
       ],
       Balance: [
-        "Balance can be uneven. The distance and tilt of the lone square counter the weight of the column.",
-        "I used two pairs and shifted them in opposite directions to spread the visual weight across the page.",
-        "I treated the empty center as a space the four squares could balance around.",
+        "The three small squares accumulate weight on one side. A single larger square farther to the right balances their combined pull.",
+        "Repeating a large–small pair on opposite diagonals balances the visual weight without making both sides identical.",
+        "Two larger squares balance each other across the middle. The smaller top and bottom squares leave room for the center to stay open.",
         "I mirrored the angles on both sides so the rotation feels balanced.",
-        "I kept the arrangement close to the center and stepped the two pairs in opposite directions.",
+        "The larger squares sit at opposite corners of a compact group. The two smaller squares keep the weight from collecting on a single side.",
         "I gave each corner the same visual weight and left the middle open."
       ],
       Chaos: [
-        "I used uneven gaps and unrelated angles so the eye has several places to jump.",
-        "I wanted chaos to feel crowded. The squares collide from several directions and the edges compete for attention.",
-        "I started with a left-to-right sequence and broke it with abrupt jumps in height and rotation.",
+        "Different sizes, angles, and gaps pull the eye in several directions. The cropped square suggests the scatter continues beyond the frame.",
+        "The large squares overlap at competing angles. The smaller one crowds in from the right, making the center feel unstable.",
+        "The eye can follow a loose left-to-right path, but the abrupt jumps in size, height, and angle interrupt its rhythm.",
         "I used a familiar grid and then disrupted its positions and angles.",
-        "I left a large gap after the first pair and turned each square independently to break the rhythm.",
+        "The cropped square starts the movement at the left edge. The size changes and uneven spacing make the sequence drift instead of settling into a pattern.",
         "The alternating positions and opposing angles make the eye zigzag through the frame."
       ],
       Order: [
         "I used a repeated row and column spacing so each square has a predictable place.",
-        "For me, order is repetition. Equal intervals make the four squares read like a steady beat.",
-        "I repeated the same horizontal and vertical step. The diagonal has a predictable direction without a grid.",
-        "I aligned all four squares vertically and repeated the same gap.",
+        "The squares alternate large and small along the same centerline. The repeated pair and equal gaps make the sequence predictable.",
+        "Each square starts at an equal diagonal step and grows by the same amount. The two progressions make the arrangement feel systematic.",
+        "The sizes alternate along a single centerline. The first and last squares continue past the frame, suggesting the pattern carries on.",
         "The squares are tilted, but repeating the same angle and spacing makes them feel ordered.",
-        "Three squares trace a column and the last one turns the corner at the same interval."
+        "The small squares establish a regular spacing. The larger square marks the corner where the direction changes."
       ]
     };
 
@@ -580,15 +580,6 @@ const isP3 = document.body.dataset.flow === "p3";
       const shift = (oldSize - size) / 2;
       square.size = size;
       Object.assign(square, constrainSquarePosition(square, square.x + shift, square.y + shift));
-    }
-
-    function resizeActiveSquare(direction) {
-      if (!canModifyBoard()) return;
-      const square = workingSquares.find(s => s.id === activeSquareId);
-      if (!square) return;
-      resizeSquare(square, direction);
-      updateDraftStatusUI();
-      renderBoard();
     }
 
     function squaresEqual(a, b) {
@@ -1330,7 +1321,6 @@ const isP3 = document.body.dataset.flow === "p3";
       }
       g.preview = preview;
       placeSquare(g.button, preview);
-      if (g.kind !== "move") document.getElementById("squareSizeReadout").value = squareSize(preview) + "%";
     }
 
     function finishSquareGesture(e, canceled = false) {
@@ -1391,15 +1381,10 @@ const isP3 = document.body.dataset.flow === "p3";
 
     function updateTiltToolbar() {
       const bar = document.getElementById("tiltControl");
-      const sizeControls = document.getElementById("squareSizeControls");
       const sq = canModifyBoard() && workingSquares.find(s => s.id === activeSquareId);
-      bar.hidden = sizeControls.hidden = !sq;
+      bar.hidden = !sq;
       if (!sq) return;
       const size = squareSize(sq);
-      document.getElementById("squareSizeLabel").textContent = `Square ${sq.id} size`;
-      document.getElementById("squareSizeReadout").value = size + "%";
-      document.getElementById("shrinkSquare").setAttribute("aria-disabled", String(size <= MIN_SQUARE_SIZE));
-      document.getElementById("growSquare").setAttribute("aria-disabled", String(size >= MAX_SQUARE_SIZE));
       document.getElementById("tiltReadout").value = `${sq.rot}°`;
       bar.style.left = `${Math.max(18, Math.min(82, sq.x + size / 2))}%`;
       bar.style.top = `${sq.y > 12 ? sq.y - 9 : sq.y + size + 3}%`;
@@ -1745,8 +1730,6 @@ const isP3 = document.body.dataset.flow === "p3";
       "rotate-active-square": event => rotateActiveSquare(-15, event),
       "rotate-active-square-2": event => rotateActiveSquare(15, event),
       "reset-active-tilt": event => resetActiveTilt(event),
-      "resize-active-square": () => resizeActiveSquare(-1),
-      "resize-active-square-2": () => resizeActiveSquare(1),
       "use-digital-canvas": () => useDigitalCanvas(),
       "document-get-element-by-id": () => document.getElementById('compositionCamera').click(),
       "document-get-element-by-id-2": () => document.getElementById('compositionUpload').click(),

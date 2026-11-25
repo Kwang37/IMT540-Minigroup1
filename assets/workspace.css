@@ -780,16 +780,6 @@
     }
     .context-panel.summary-only { grid-column: 1 / -1; width: min(100%, 50rem); justify-self: center; }
     .board-surface { position: relative; }
-    .square-size-controls {
-      display: flex;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-top: 12px;
-    }
-    .square-size-controls .btn { min-width: 44px; min-height: 44px; padding: 4px 12px; font-size: 1.15rem; }
-    .square-size-controls [aria-disabled="true"] { opacity: .5; cursor: default; }
-    .square-size-controls output { min-width: 5rem; text-align: center; }
     .workspace-top-row .header-group { gap: 8px; }
     .workspace-concept { display: flex; align-items: baseline; gap: 6px; }
     .workspace-concept-label { font-size: .875rem; color: var(--text-muted); }
@@ -826,11 +816,6 @@
         border-radius: 1px;
       }
     }
-    .square-size-controls .corner-hint {
-      font-size: .8rem;
-      color: var(--text-muted);
-    }
-    @media (pointer: coarse) { .corner-hint { display: none; } }
     @media (pointer: coarse) and (min-width: 768px) {
       .board-surface:has(.is-editable) .touch-hint { display: block; margin-bottom: 8px; font-size: .875rem; }
     }

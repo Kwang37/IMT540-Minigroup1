@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>4SQUARES Workspace</title>
-  <link rel="stylesheet" href="./assets/workspace.css">
+  <link rel="stylesheet" href="./assets/workspace.css?v=e3753130cf">
 </head>
 <body data-flow="classic">
 
@@ -171,13 +171,6 @@
               <output id="tiltReadout">0°</output>
               <button type="button" data-click="rotate-active-square-2" aria-label="Rotate clockwise 15 degrees">+15°</button>
               <button type="button" data-click="reset-active-tilt">0°</button>
-            </div>
-            <div id="squareSizeControls" class="square-size-controls" role="group" aria-labelledby="squareSizeLabel" hidden>
-              <span id="squareSizeLabel">Square size</span>
-              <button type="button" id="shrinkSquare" class="btn" data-click="resize-active-square" aria-label="Make selected square smaller">−</button>
-              <output id="squareSizeReadout" aria-label="Side length as a percentage of the board"></output>
-              <button type="button" id="growSquare" class="btn" data-click="resize-active-square-2" aria-label="Make selected square larger">+</button>
-              <span class="corner-hint">Drag any corner to resize.</span>
             </div>
 
           </div>
@@ -370,6 +363,6 @@
     </details>
   </div>
 
-  <script type="module" src="./assets/workspace.js"></script>
+  <script type="module" src="./assets/workspace.js?v=e3753130cf"></script>
 </body>
 </html>
