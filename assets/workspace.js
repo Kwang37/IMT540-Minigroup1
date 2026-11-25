@@ -80,16 +80,17 @@ const isP3 = document.body.dataset.flow === "p3";
       document.getElementById("firstReflectionPrompt").textContent = usePhoto
         ? "Why did you arrange the squares this way?"
         : "What idea or feeling did you want to show? Describe one choice you made with the squares and why.";
+      document.getElementById("ghostToolbar").hidden = usePhoto || currentStep !== 3;
+      if (isP3) return;
+
       document.getElementById("createInstruction").textContent =
         `Add your four-square arrangement for ${selectedConcept}.`;
       document.getElementById("photoWorkspace").hidden = !usePhoto;
       document.getElementById("variationInstruction").textContent = usePhoto
         ? "Try a new arrangement on the canvas or add a photo or PDF. Save it as a new version."
         : "Move or turn a square to try an idea from your reflection. Choose Save New Version to keep both arrangements.";
-      const showBoard = !usePhoto || (currentStep === 3 && !workingPhoto);
-      document.getElementById("board").hidden = !showBoard;
+      document.getElementById("board").hidden = usePhoto && (currentStep !== 3 || Boolean(workingPhoto));
       document.getElementById("useCanvasBtn").hidden = currentStep !== 3 || !workingPhoto;
-      document.getElementById("ghostToolbar").hidden = usePhoto || currentStep !== 3;
       document.getElementById("galleryGhostToggle").closest("label").hidden = usePhoto;
       const canAddPhoto = usePhoto && ((currentStep === 1 && !v1Locked) || currentStep === 3);
       document.getElementById("photoControls").hidden = !canAddPhoto;
@@ -223,9 +224,11 @@ const isP3 = document.body.dataset.flow === "p3";
       }
     }
 
-    try {
-      mergeGallery(readGalleryPosts(JSON.parse(localStorage.getItem(galleryKey) || "[]")));
-    } catch {}
+    if (!isP3) {
+      try {
+        mergeGallery(readGalleryPosts(JSON.parse(localStorage.getItem(galleryKey) || "[]")));
+      } catch {}
+    }
 
     async function importGallery(input) {
       const file = input.files[0];
@@ -466,6 +469,8 @@ const isP3 = document.body.dataset.flow === "p3";
 
     function renderGallery() {
       renderGallerySamples();
+      if (isP3) return;
+
       const myV1 = document.getElementById("galleryV1");
       myV1.hidden = mode !== "inperson" || !choices[0]?.photo;
       if (myV1.hidden) myV1.open = false;
@@ -665,14 +670,13 @@ const isP3 = document.body.dataset.flow === "p3";
 
     function launchApp(selectedMode) {
       document.getElementById("conceptIndicator").textContent = selectedConcept;
-      mode = selectedMode;
+      mode = isP3 ? "online" : selectedMode;
       document.getElementById("entryGate").hidden = true;
       document.getElementById("workspaceShell").hidden = false;
 
-      const isOnline = mode === "online";
-      const modeIndicator = document.getElementById("modeIndicator");
-      modeIndicator.hidden = isP3 && isOnline;
-      modeIndicator.textContent = isOnline ? "Online Solo Mode" : "In-Person Assist";
+      if (!isP3) {
+        document.getElementById("modeIndicator").textContent = mode === "online" ? "Online Solo Mode" : "In-Person Assist";
+      }
       startBlankSession();
 
     }
@@ -690,12 +694,14 @@ const isP3 = document.body.dataset.flow === "p3";
       compareRequested = false;
       document.getElementById("reflectionHelp").open = false;
       document.getElementById("draftStatus").textContent = "";
-      document.getElementById("galleryStatus").textContent = "";
-      document.getElementById("galleryInterpretation").value = "";
       activeSquareId = null;
-      document.getElementById("compositionUpload").value = "";
-      document.getElementById("compositionCamera").value = "";
-      document.getElementById("photoStatus").textContent = "";
+      if (!isP3) {
+        document.getElementById("galleryStatus").textContent = "";
+        document.getElementById("galleryInterpretation").value = "";
+        document.getElementById("compositionUpload").value = "";
+        document.getElementById("compositionCamera").value = "";
+        document.getElementById("photoStatus").textContent = "";
+      }
       v1Locked = false;
       isWorkingDraftDirty = false;
 
@@ -730,10 +736,12 @@ const isP3 = document.body.dataset.flow === "p3";
       document.getElementById("lockV1Btn").textContent = "Save & Open Gallery";
 
       document.getElementById("savedVersions").open = false;
-      document.getElementById("galleryV1").open = false;
-      const galleryV1Preview = document.getElementById("galleryV1Preview");
-      galleryV1Preview.replaceChildren();
-      delete galleryV1Preview.dataset.source;
+      if (!isP3) {
+        document.getElementById("galleryV1").open = false;
+        const galleryV1Preview = document.getElementById("galleryV1Preview");
+        galleryV1Preview.replaceChildren();
+        delete galleryV1Preview.dataset.source;
+      }
       hideDecisionExport();
       document.getElementById("v1GhostToggle").checked = false;
       validateStep1Gate();
@@ -828,7 +836,7 @@ const isP3 = document.body.dataset.flow === "p3";
     }
 
     function validateStep1Gate() {
-      document.getElementById("inPersonReflectBtn").disabled = !workingPhoto;
+      if (!isP3) document.getElementById("inPersonReflectBtn").disabled = !workingPhoto;
       const hasGoal = document.getElementById("goalField").value.trim().length > 0;
       document.getElementById("lockV1Btn").disabled = !hasGoal || (mode === "inperson" && !workingPhoto);
       if (isP3) document.getElementById("explorationReflect").disabled = reviewedArrangement === null || !hasGoal;
@@ -1029,7 +1037,7 @@ const isP3 = document.body.dataset.flow === "p3";
       }
       document.getElementById("onlineCreateTitle").textContent =
         explorations.length ? "Try Another Arrangement" : "Make a Composition";
-      document.getElementById("inPersonCreatePanel").hidden = !(inPerson && isCreation);
+      if (!isP3) document.getElementById("inPersonCreatePanel").hidden = !(inPerson && isCreation);
       document.getElementById("onlineCreateHint").textContent =
         `Arrange four squares to express ${selectedConcept}. Try changing a gap or letting a square extend past the frame.`;
       document.getElementById("stepNav4").textContent = inPerson || choices.length < 2 || isSummary ? "4. Summary & Export" : "4. Compare & Export";
@@ -1521,11 +1529,13 @@ const isP3 = document.body.dataset.flow === "p3";
         concept: selectedConcept,
         firstReflection,
         secondReflection,
-        galleryPostId,
-        inspirationIds: [...inspiration],
+        ...(!isP3 && {
+          galleryPostId,
+          inspirationIds: [...inspiration],
+          inspiringWorks: galleryPosts().filter(post => inspiration.has(post.id))
+        }),
         keptChoiceIdx,
         reflectionDraft: document.getElementById("understandingShiftField").value.trim(),
-        inspiringWorks: galleryPosts().filter(post => inspiration.has(post.id)),
         initialGoal: document.getElementById("goalField").value.trim(),
         plannedNextBeforeFeedback: document.getElementById("nextField").value.trim(),
         understandingShiftExplanation: document.getElementById("understandingShiftField").value.trim(),
@@ -1553,7 +1563,7 @@ const isP3 = document.body.dataset.flow === "p3";
     function readDraft() {
       try {
         const draft = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        if (!draft?.versionsHistory?.length) return null;
+        if (!draft?.versionsHistory?.length || (isP3 && draft.participationMode !== "online")) return null;
         return draft.firstReflection || draft.explorations?.length ? draft : null;
       } catch {
         return null;

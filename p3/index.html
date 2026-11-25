@@ -50,7 +50,6 @@
       <div class="header-group workspace-top-row">
         <div class="header-group workspace-status">
           <p class="workspace-concept"><span class="workspace-concept-label">Concept</span> <strong id="conceptIndicator"></strong></p>
-          <span id="modeIndicator" class="badge" hidden>In-Person Assist</span>
         </div>
         <div class="header-group workspace-actions">
           <button type="button" class="btn workspace-tutorial" data-click="open-tutorial">Tutorial</button>
@@ -88,40 +87,13 @@
           <h2 id="galleryTitle" tabindex="-1">Gallery</h2>
           <button type="button" class="btn btn-primary" data-click="go-to-step">Continue to Reflection</button>
         </header>
-        <p>Tap or click a card to read the interpretation behind the arrangement.</p>
-        <details id="galleryV1" class="disclosure-block" data-toggle="show-gallery-v1" hidden>
-          <summary>View my V1</summary>
-          <div id="galleryV1Preview"></div>
-          <p id="galleryV1Sharing" class="meta-note"></p>
-        </details>
-        <details class="disclosure-block">
-          <summary>Simulated Peer Feedback</summary>
-          <p>This example comment was written in advance. It does not come from a classmate or respond to your arrangement.</p>
-          <blockquote>What does the space around the square that stands apart suggest to you?</blockquote>
-        </details>
+        <p>Compare how the examples express the same concept. Open a card to read what its composition emphasizes.</p>
         <div class="action-row">
           <button class="btn" type="button" data-click="scroll-samples">Previous Cards</button>
           <button class="btn" type="button" data-click="scroll-samples-2">Next Cards</button>
         </div>
         <p id="sampleSaveHelp" class="meta-note" hidden>You can save one example for Reflection 2.<span id="sampleSaveStatus" class="sample-save-status" role="status"></span></p>
         <div id="gallerySamples" class="sample-grid" tabindex="0" role="region" aria-label="Six example compositions"></div>
-        <section id="peerWorks" aria-labelledby="peerWorksTitle" hidden>
-          <h3 id="peerWorksTitle">Peer Works</h3>
-          <div id="galleryList"></div>
-        </section>
-        <details class="disclosure-block">
-          <summary>Share or Import Peer Work</summary>
-            <label for="galleryInterpretation">Public interpretation</label>
-            <textarea id="galleryInterpretation" maxlength="1000" placeholder="Explain your concept and why you arranged the squares this way."></textarea>
-            <p>Export your gallery and exchange files with classmates to share works and comments.</p>
-            <div class="action-row">
-              <button type="button" class="btn" data-click="publish-to-gallery">Add V1 to Gallery</button>
-              <button type="button" class="btn" data-click="export-gallery">Export Gallery File</button>
-            </div>
-            <label for="galleryImport">Import peer work or comments</label>
-            <input id="galleryImport" type="file" accept=".json,application/json" data-change="import-gallery" />
-            <p id="galleryStatus" role="status"></p>
-        </details>
       </section>
       <!-- LEFT COLUMN: BOARD OR COMPARISON GALLERY -->
       <section id="stageSection" class="stage-section" aria-label="Composition workspace">
@@ -158,23 +130,6 @@
             </div>
 
           </div>
-
-          <section id="photoWorkspace" class="disclosure-block" hidden>
-            <div id="photoControls" class="panel-group">
-              <h3 id="photoSectionTitle">Composition file</h3>
-              <div class="action-row">
-                <button id="useCanvasBtn" type="button" class="btn" data-click="use-digital-canvas" hidden>Use Digital Canvas</button>
-                <button id="takePhotoBtn" type="button" class="btn btn-primary" data-click="document-get-element-by-id">Take Photo</button>
-                <button id="choosePhotoBtn" type="button" class="btn" data-click="document-get-element-by-id-2">Choose Photo or PDF</button>
-              </div>
-              <input id="compositionCamera" type="file" accept="image/*" capture="environment" data-change="load-composition-photo" hidden />
-              <input id="compositionUpload" type="file" accept="image/*,application/pdf,.pdf" data-change="load-composition-photo" hidden />
-            </div>
-            <div class="photo-frame">
-              <div id="compositionPhoto" hidden></div>
-            </div>
-            <p id="photoStatus" role="status"></p>
-          </section>
 
           <!-- Version & Working Draft Management -->
           <section id="choicesTray" class="choices-bar" aria-label="Version management" hidden>
@@ -232,11 +187,6 @@
             <textarea id="explorationReason" placeholder="I chose this arrangement because…" data-input="save-exploration-reason"></textarea>
           </div>
           <button type="button" id="explorationReflect" class="btn btn-primary" data-click="lock-baseline-v1" disabled>Save &amp; Open Gallery</button>
-        </section>
-        <section id="inPersonCreatePanel" class="panel-group" aria-labelledby="inPersonCreateTitle" hidden>
-          <h2 id="inPersonCreateTitle" class="panel-title">Add Your Composition</h2>
-          <p id="createInstruction"></p>
-          <button type="button" id="inPersonReflectBtn" class="btn btn-primary" data-click="go-to-step-3" disabled>Continue to Reflection</button>
         </section>
         <section id="panelStep1" class="panel-group" aria-labelledby="step1Title">
           <div class="disclosure-header">
@@ -310,7 +260,7 @@
           <h2 id="step3Title" class="panel-title">3. Try Another Arrangement</h2>
 
           <p id="variationInstruction" class="source-disclaimer">
-            Try changing one thing you noticed during reflection. Move or turn a square, or add a new photo. Choose <strong>Save New Version</strong> to keep both arrangements.
+            Try changing one thing you noticed during reflection. Move, turn, or resize a square. Choose <strong>Save New Version</strong> to keep both arrangements.
           </p>
 
           <div class="disclosure-block">
@@ -362,6 +312,6 @@
     </details>
   </div>
 
-  <script type="module" src="../assets/workspace.js?v=e3753130cf"></script>
+  <script type="module" src="../assets/workspace.js?v=195bd9db62"></script>
 </body>
 </html>
