@@ -777,7 +777,6 @@ const isP3 = document.body.dataset.flow === "p3";
 
       document.getElementById("goalField").value = "";
       document.getElementById("goalField").readOnly = false;
-      if (isP3) document.getElementById("explorationReason").value = "";
       document.getElementById("nextField").value = "";
       document.getElementById("nextField").readOnly = false;
       document.getElementById("understandingShiftField").value = "";
@@ -849,13 +848,8 @@ const isP3 = document.body.dataset.flow === "p3";
 
     function renderExplorationReview() {
       const list = document.getElementById("explorationList");
-      const reason = document.getElementById("explorationReason");
       document.getElementById("explorationReviewPrompt").textContent =
         `Compare your arrangements. Which one best shows ${selectedConcept.toLowerCase()}?`;
-      document.getElementById("explorationReasonLabel").textContent =
-        `Why did you choose this arrangement to show ${selectedConcept.toLowerCase()}? Point to a detail such as a gap, angle, or overlap.`;
-      reason.value = document.getElementById("goalField").value;
-      document.getElementById("explorationReasonGroup").hidden = reviewedArrangement === null;
       list.replaceChildren();
       explorations.forEach((squares, index) => {
         const item = document.createElement("li");
@@ -870,8 +864,7 @@ const isP3 = document.body.dataset.flow === "p3";
           if (reviewedArrangement !== index) document.getElementById("goalField").value = "";
           reviewedArrangement = index;
           workingSquares = clone(squares);
-          renderExplorationReview();
-          list.children[index].firstElementChild.focus({ preventScroll: true });
+          goToStep(1.25);
           persistSessionState();
         });
         item.appendChild(button);
@@ -880,24 +873,15 @@ const isP3 = document.body.dataset.flow === "p3";
       validateStep1Gate();
     }
 
-    function saveExplorationReason() {
-      document.getElementById("goalField").value = document.getElementById("explorationReason").value;
-      validateStep1Gate();
-      persistSessionState();
-    }
-
     function validateStep1Gate() {
       if (!isP3) document.getElementById("inPersonReflectBtn").disabled = !workingPhoto;
       const hasGoal = document.getElementById("goalField").value.trim().length > 0;
       document.getElementById("lockV1Btn").disabled = !hasGoal || (mode === "inperson" && !workingPhoto);
-      if (isP3) document.getElementById("explorationReflect").disabled = reviewedArrangement === null || !hasGoal;
     }
 
     function lockBaselineV1() {
       if (!v1Locked) {
-        if (currentStep === 1.1
-          ? document.getElementById("explorationReflect").disabled
-          : document.getElementById("lockV1Btn").disabled) return;
+        if (document.getElementById("lockV1Btn").disabled) return;
         firstReflection = {
           text: document.getElementById("goalField").value.trim(),
           next: document.getElementById("nextField").value.trim()
@@ -1037,6 +1021,7 @@ const isP3 = document.body.dataset.flow === "p3";
         return;
       }
       if (currentStep === 2 && step === 4) {
+        if (isP3) variationSkipped = true;
         secondReflection = {
           text: document.getElementById("understandingShiftField").value.trim(),
           inspiration: [...inspiration]
@@ -1078,6 +1063,7 @@ const isP3 = document.body.dataset.flow === "p3";
       });
 
       if (isP3) {
+        document.querySelector(".mobile-step-menu").open = false;
         const pre = document.getElementById("stepNavPre");
         if (currentStep === 1.25) pre.setAttribute("aria-current", "step");
         else pre.removeAttribute("aria-current");
@@ -1746,7 +1732,6 @@ const isP3 = document.body.dataset.flow === "p3";
       if (!firstReflection) {
         workingSquares = clone(draft.explorationDraft || explorations[reviewedArrangement] || explorations.at(-1));
         document.getElementById("goalField").value = draft.initialGoal || "";
-        if (isP3) document.getElementById("explorationReason").value = draft.initialGoal || "";
         goToStep(isP3 && draft.currentStep === 1.25 && reviewedArrangement !== null ? 1.25 : explorations.length === EXPLORATION_COUNT ? 1.1 : 1);
         return;
       }
@@ -1961,7 +1946,6 @@ const isP3 = document.body.dataset.flow === "p3";
     };
 
     const inputActions = {
-      "save-exploration-reason": () => saveExplorationReason(),
       "validate-step1-gate": () => { validateStep1Gate(); if (isP3) persistSessionState(); },
       "validate-step2-gate": () => { validateStep2Gate(); if (isP3) persistSessionState(); },
       "hide-decision-export": () => { hideDecisionExport(); if (isP3) persistSessionState(); },
