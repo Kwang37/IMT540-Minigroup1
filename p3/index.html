@@ -818,12 +818,13 @@
         display: grid;
         place-items: center;
         position: absolute;
-        bottom: 0;
-        right: 0;
-        width: 20px;
-        height: 20px;
-        cursor: nwse-resize;
+        width: min(20px, 36%);
+        height: min(20px, 36%);
       }
+      .square-resize-handle[data-corner="nw"] { top: 0; left: 0; cursor: nwse-resize; }
+      .square-resize-handle[data-corner="ne"] { top: 0; right: 0; cursor: nesw-resize; }
+      .square-resize-handle[data-corner="se"] { bottom: 0; right: 0; cursor: nwse-resize; }
+      .square-resize-handle[data-corner="sw"] { bottom: 0; left: 0; cursor: nesw-resize; }
       .square-resize-handle::after {
         content: "";
         width: 8px;
@@ -1215,7 +1216,7 @@
               <button type="button" id="shrinkSquare" class="btn" onclick="resizeActiveSquare(-1)" aria-label="Make selected square smaller">−</button>
               <output id="squareSizeReadout" aria-label="Side length as a percentage of the board"></output>
               <button type="button" id="growSquare" class="btn" onclick="resizeActiveSquare(1)" aria-label="Make selected square larger">+</button>
-              <span class="corner-hint">Drag the corner to resize.</span>
+              <span class="corner-hint">Drag any corner to resize.</span>
             </div>
 
           </div>
@@ -1444,6 +1445,7 @@
     let workingSquares = [];
     let activeSquareId = null;
     let squareGesture = null;
+    const resizeCornerAngles = { nw: -135, ne: -45, se: 45, sw: 135 };
 
     let firstReflection = null;
     let secondReflection = null;
@@ -2627,10 +2629,13 @@
           btn.type = "button";
           btn.className = "square-node";
           btn.textContent = `#${sq.id}`;
-          const resizeHandle = document.createElement("span");
-          resizeHandle.className = "square-resize-handle";
-          resizeHandle.setAttribute("aria-hidden", "true");
-          btn.append(resizeHandle);
+          for (const corner of Object.keys(resizeCornerAngles)) {
+            const handle = document.createElement("span");
+            handle.className = "square-resize-handle";
+            handle.dataset.corner = corner;
+            handle.setAttribute("aria-hidden", "true");
+            btn.append(handle);
+          }
           btn.addEventListener("contextmenu", (e) => { if (canModifyBoard()) e.preventDefault(); });
           btn.addEventListener("click", (e) => {
             if (e.detail === 0 && canModifyBoard()) {
@@ -2684,11 +2689,13 @@
       const button = e.target.closest("button.square-node");
       const square = workingSquares.find(sq => squareButtonMap.get(sq.id) === button);
       if (!square || !gestureBoard.clientWidth || !gestureBoard.clientHeight) return;
-      const corner = e.pointerType !== "touch" && e.target.classList.contains("square-resize-handle");
+      const handle = e.pointerType === "touch" ? null : e.target.closest(".square-resize-handle");
+      const cornerAngle = handle ? resizeCornerAngles[handle.dataset.corner] : undefined;
       e.preventDefault();
       activeSquareId = square.id;
       squareGesture = {
-        kind: corner ? "corner" : "move", pointerType: e.pointerType, square, button,
+        kind: cornerAngle === undefined ? "move" : "corner", cornerAngle,
+        pointerType: e.pointerType, square, button,
         origin: point, points: new Map([[e.pointerId, point]]), preview: clone(square),
         width: gestureBoard.clientWidth, height: gestureBoard.clientHeight, moved: false
       };
@@ -2708,7 +2715,7 @@
         if (!g.moved && Math.hypot(dx, dy) <= (g.kind === "corner" ? 1 : 5)) return;
         g.moved = true;
         if (g.kind === "corner") {
-          const diagonal = (g.square.rot + 45) * Math.PI / 180;
+          const diagonal = (g.square.rot + g.cornerAngle) * Math.PI / 180;
           const projected = dx * 100 / g.width * Math.cos(diagonal) + dy * 100 / g.height * Math.sin(diagonal);
           setSquareSize(preview, squareSize(g.square) + projected * Math.SQRT2);
         } else {
