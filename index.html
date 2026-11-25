@@ -1,1022 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="Content-Security-Policy" content="connect-src 'none'; img-src data: blob:">
+  <meta http-equiv="Content-Security-Policy" content="script-src 'self'; connect-src 'none'; img-src data: blob:">
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>4SQUARES Workspace</title>
-  <style>
-    :root {
-      --bg: #ffffff;
-      --surface-muted: #f8fafc;
-      --border: #cbd5e1;
-      --border-strong: #0f172a;
-      --text: #0f172a;
-      --text-muted: #475569;
-      --accent: #1d4ed8;
-      --accent-soft: #eff6ff;
-      --warn-bg: #fffbeb;
-      --warn-border: #d97706;
-      --warn-text: #92400e;
-      --focus-ring: 2px solid #1d4ed8;
-      --radius: 6px;
-      --space-1: 4px;
-      --space-2: 8px;
-      --space-3: 12px;
-      --space-4: 16px;
-      --space-5: 24px;
-      --space-6: 32px;
-    }
-
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.5;
-      min-height: 100vh;
-      min-height: 100dvh;
-      display: flex;
-      flex-direction: column;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    :focus-visible {
-      outline: var(--focus-ring);
-      outline-offset: 2px;
-    }
-
-    .sr-only {
-      position: absolute;
-      width: 1px;
-      height: 1px;
-      padding: 0;
-      margin: -1px;
-      overflow: hidden;
-      clip: rect(0, 0, 0, 0);
-      white-space: nowrap;
-      border: 0;
-    }
-
-    [hidden] {
-      display: none !important;
-    }
-
-    button, select, input, textarea {
-      font: inherit;
-      color: inherit;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      padding: var(--space-2) var(--space-3);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--bg);
-      font-size: 0.8125rem;
-      font-weight: 600;
-      cursor: pointer;
-    }
-
-    .btn:hover:not(:disabled) {
-      border-color: var(--border-strong);
-    }
-
-    .btn:disabled {
-      opacity: 0.45;
-      cursor: not-allowed;
-    }
-
-    .btn-primary {
-      background: var(--text);
-      color: var(--bg);
-      border-color: var(--text);
-    }
-
-    .btn-primary:hover:not(:disabled) {
-      background: #1e293b;
-    }
-
-    .badge {
-      display: inline-block;
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 2px var(--space-2);
-      border-radius: 4px;
-      background: var(--surface-muted);
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-    }
-
-    .badge-active {
-      background: var(--accent-soft);
-      border-color: var(--accent);
-      color: var(--accent);
-    }
-
-    label {
-      display: block;
-      font-size: 0.8125rem;
-      font-weight: 600;
-      margin-bottom: var(--space-1);
-    }
-
-    input[type="text"], input[type="number"], textarea, select {
-      width: 100%;
-      padding: var(--space-2) var(--space-3);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--bg);
-      font-size: 0.875rem;
-    }
-
-    input:read-only, textarea:read-only {
-      background: var(--surface-muted);
-      color: var(--text-muted);
-    }
-
-    textarea {
-      resize: vertical;
-      min-height: 64px;
-    }
-
-    /* Screen 0: Pure White Entry Gate */
-    .entry-gate {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: var(--space-5);
-      background: var(--bg);
-    }
-
-    .gate-dialog {
-      width: 100%;
-      max-width: 500px;
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: var(--space-6);
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-5);
-    }
-
-    .gate-header {
-      display: flex;
-      align-items: center;
-      gap: var(--space-3);
-    }
-
-    .mark-4squares {
-      display: grid;
-      grid-template-columns: repeat(2, 10px);
-      gap: 3px;
-    }
-
-    .mark-4squares span {
-      width: 10px;
-      height: 10px;
-      background: var(--text);
-    }
-
-    .gate-header h1 {
-      font-size: 1.25rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-    }
-
-    .gate-grid {
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: var(--space-3);
-    }
-
-    .gate-option {
-      text-align: left;
-      padding: var(--space-4);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--bg);
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-1);
-    }
-
-    .gate-option:hover {
-      border-color: var(--border-strong);
-    }
-
-    .gate-option strong {
-      font-size: 0.9375rem;
-    }
-
-    .gate-option span {
-      font-size: 0.8125rem;
-      color: var(--text-muted);
-    }
-
-    /* Header & Stepper */
-    .app-header {
-      border-bottom: 1px solid var(--border);
-      padding: var(--space-3) var(--space-4);
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--space-3);
-    }
-
-    .header-group {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      flex-wrap: wrap;
-    }
-
-    .step-list {
-      list-style: none;
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-1);
-    }
-
-    .step-item {
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: var(--space-1) var(--space-2);
-      border-radius: 4px;
-      color: var(--text-muted);
-    }
-
-    .step-item[aria-current="step"] {
-      background: var(--text);
-      color: var(--bg);
-    }
-
-    .mobile-progress, .session-actions { display: none; }
-
-    /* Mobile-First Main Grid */
-    .workspace-main {
-      flex: 1;
-      width: 100%;
-      max-width: 1180px;
-      margin: 0 auto;
-      padding: var(--space-4);
-      display: grid;
-      grid-template-columns: 1fr;
-      gap: var(--space-5);
-      align-items: start;
-    }
-
-    @media (min-width: 600px) {
-      .gate-grid {
-        grid-template-columns: 1fr 1fr;
-      }
-    }
-
-    /* Desktop workspace */
-    @media (min-width: 880px) {
-      .workspace-main {
-        --board-edge: clamp(320px, 68vh, 560px);
-        --panel-width: clamp(360px, 39vw, 580px);
-        max-width: 1400px;
-        grid-template-columns: minmax(0, 1fr);
-        padding: clamp(24px, 2.5vw, 40px);
-        gap: clamp(24px, 3vw, 48px);
-      }
-
-      .workspace-main:has(.stage-section:not([hidden])) {
-        grid-template-columns: minmax(0, var(--board-edge)) minmax(0, var(--panel-width));
-        justify-content: center;
-      }
-
-      .workspace-main:has(.stage-section.wide) {
-        grid-template-columns: minmax(0, 1fr) minmax(0, clamp(340px, 30vw, 440px));
-      }
-
-      .workspace-main .stage-section,
-      .workspace-main .context-panel {
-        min-width: 0;
-      }
-
-      .workspace-main .stage-section {
-        max-width: none;
-      }
-
-      #canvasView > .canvas-toolbar:not(:has(> :not([hidden]))) {
-        display: none;
-      }
-    }
-
-    @media (min-width: 1200px) {
-      .app-header,
-      .app-header .header-group,
-      .desktop-progress .step-list {
-        flex-wrap: nowrap;
-        white-space: nowrap;
-      }
-    }
-
-    /* Left Column: Board & Version Tray */
-    .stage-section {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-      width: 100%;
-      max-width: 480px;
-      margin: 0 auto;
-    }
-
-    .stage-section.wide {
-      max-width: 100%;
-    }
-
-    .canvas-toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      min-height: 32px;
-      gap: var(--space-2);
-      flex-wrap: wrap;
-    }
-
-    .canvas-frame {
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      border: 2px solid var(--border-strong);
-      border-radius: 4px;
-      position: relative;
-      overflow: hidden;
-      background-color: var(--bg);
-      background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
-      background-size: 5% 5%;
-    }
-
-    .square-node {
-      position: absolute;
-      width: 16.5%;
-      height: 16.5%;
-      background: var(--text);
-      color: var(--bg);
-      border: 0;
-      font-size: 0.75rem;
-      font-weight: 700;
-      cursor: grab;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
-    }
-
-    .square-node:active {
-      cursor: grabbing;
-    }
-
-    .square-node[aria-pressed="true"] {
-      outline: 2px solid var(--accent);
-      outline-offset: 2px;
-    }
-
-    .square-ghost {
-      position: absolute;
-      width: 16.5%;
-      height: 16.5%;
-      border: 2px dashed var(--accent);
-      background: rgba(29, 78, 216, 0.06);
-      color: var(--accent);
-      font-size: 0.6875rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-    }
-
-    .eye-pin {
-      position: absolute;
-      transform: translate(-50%, -50%);
-      background: var(--bg);
-      color: var(--text);
-      border: 2px solid var(--text);
-      font-size: 0.6875rem;
-      font-weight: 700;
-      padding: 2px 6px;
-      border-radius: 4px;
-      pointer-events: none;
-      z-index: 20;
-    }
-
-    .tilt-bar {
-      position: absolute;
-      transform: translateX(-50%);
-      background: var(--text);
-      color: var(--bg);
-      padding: var(--space-1);
-      border-radius: var(--radius);
-      display: flex;
-      align-items: center;
-      gap: var(--space-1);
-      z-index: 30;
-    }
-
-    .tilt-bar button {
-      background: transparent;
-      border: 1px solid rgba(255,255,255,0.25);
-      color: var(--bg);
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .tilt-bar output {
-      font-size: 0.75rem;
-      min-width: 32px;
-      text-align: center;
-    }
-
-    /* Version Management Tray */
-    .choices-bar {
-      border-top: 1px solid var(--border);
-      padding-top: var(--space-3);
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-2);
-    }
-
-    .store-actions {
-      display: flex;
-      gap: var(--space-2);
-      flex-wrap: wrap;
-    }
-
-    .choices-list {
-      list-style: none;
-      display: flex;
-      gap: var(--space-2);
-      overflow-x: auto;
-      padding-bottom: var(--space-1);
-    }
-
-    .choice-btn {
-      text-align: left;
-      padding: var(--space-2) var(--space-3);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      background: var(--bg);
-      cursor: pointer;
-      min-width: 136px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-    }
-
-    .choice-btn[aria-current="true"] {
-      background: var(--text);
-      border-color: var(--text);
-      color: var(--bg);
-    }
-
-    .choice-btn strong {
-      font-size: 0.8125rem;
-    }
-
-    .choice-btn span {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    /* Step 4: Multi-Choice Comparison Grid */
-    .compare-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-      gap: var(--space-4);
-      width: 100%;
-    }
-
-    .compare-item {
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: var(--space-3);
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-2);
-      background: var(--bg);
-    }
-
-    .compare-item.is-selected {
-      border-color: var(--border-strong);
-      border-width: 2px;
-    }
-
-    .compare-item-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--space-2);
-      font-size: 0.8125rem;
-    }
-
-    .meta-note {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    /* Right Contextual Panel */
-    .context-panel {
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: var(--space-5);
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-4);
-    }
-
-    .panel-group {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-3);
-    }
-
-    .panel-title {
-      font-size: 1rem;
-      font-weight: 700;
-    }
-
-    .disclosure-block {
-      border-top: 1px solid var(--border);
-      padding-top: var(--space-3);
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-2);
-    }
-
-    .disclosure-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: var(--space-2);
-    }
-
-    .disclosure-header h3 {
-      font-size: 0.875rem;
-      font-weight: 600;
-    }
-
-    .source-disclaimer {
-      font-size: 0.75rem;
-      color: var(--text-muted);
-    }
-
-    .quote-text {
-      font-size: 0.875rem;
-      color: var(--text);
-      border-left: 2px solid var(--border-strong);
-      padding-left: var(--space-3);
-    }
-
-    .chip-group {
-      display: flex;
-      flex-wrap: wrap;
-      gap: var(--space-1);
-    }
-
-    .tag-btn {
-      font-size: 0.75rem;
-      padding: var(--space-1) var(--space-2);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      background: var(--bg);
-      cursor: pointer;
-    }
-
-    .tag-btn[aria-pressed="true"] {
-      background: var(--text);
-      color: var(--bg);
-      border-color: var(--text);
-    }
-
-    .checkbox-row {
-      display: flex;
-      align-items: center;
-      gap: var(--space-2);
-      font-size: 0.8125rem;
-      font-weight: 500;
-      cursor: pointer;
-    }
-
-    .coord-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr auto;
-      gap: var(--space-2);
-      align-items: end;
-    }
-
-    .action-row {
-      display: flex;
-      gap: var(--space-2);
-      padding-top: var(--space-2);
-      flex-wrap: wrap;
-    }
-
-    .action-row .btn-primary {
-      flex: 1;
-    }
-
-    .log-output {
-      border-top: 1px solid var(--border);
-      padding-top: var(--space-3);
-      font-size: 0.8125rem;
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-2);
-    }
-
-    .log-item {
-      padding-left: var(--space-2);
-      border-left: 2px solid var(--border);
-    }
-    .concept-bubble {
-      aspect-ratio: 1;
-      width: min(100%, 8rem);
-      justify-self: center;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-    }
-
-    .photo-frame { position: relative; width: fit-content; margin-inline: auto; }
-    .photo-frame .eye-pin { pointer-events: none; }
-    .composition-photo { display: block; width: 100%; max-height: 32rem; object-fit: contain; }
-    #galleryV1Preview { width: min(100%, 42rem); margin-block: 8px; }
-    .sample-save-status { margin-inline-start: .35em; }
-    .sample-save[aria-pressed="true"] {
-      border-color: var(--accent);
-      background: var(--accent-soft);
-      color: var(--accent);
-    }
-    .journey-grid { display: grid; gap: 12px; }
-    @media (min-width: 600px) { .journey-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    #galleryList { display: grid; gap: 12px; }
-    #galleryList blockquote, #thinkingJourney blockquote { white-space: pre-wrap; overflow-wrap: anywhere; }
-    #galleryPage { grid-column: 1 / -1; display: grid; gap: 24px; min-width: 0; }
-    .gallery-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
-    .gallery-heading h2 { font-size: clamp(1.5rem, 4vw, 2.25rem); line-height: 1.15; }
-    .sample-grid { display: grid; grid-auto-flow: column; grid-auto-columns: 85%; overflow-x: auto; scroll-snap-type: x mandatory; padding: 8px 8px 12px; gap: 24px; }
-    .sample-grid figure { margin: 0; min-width: 0; scroll-snap-align: start; scroll-margin-inline-start: 8px; }
-    .sample-grid figcaption { display: grid; gap: 2px; padding-block: 12px; }
-    .sample-grid figcaption span { font-size: .875rem; color: var(--text-muted, #475569); }
-    .sample-art { background: #f4f3ef; border: 1px solid #e0ddd6; touch-action: auto; }
-    .sample-square { position: absolute; width: 16.5%; aspect-ratio: 1; background: #171717; }
-    #galleryPage summary { cursor: pointer; }
-    @media (min-width: 600px) { .sample-grid { grid-auto-columns: calc((100% - 28px) / 2); } }
-    @media (min-width: 880px) { .sample-grid { grid-auto-columns: calc((100% - 56px) / 3); } }
-    #tutorial { display: grid; gap: 16px; }
-    #tutorialBody { line-height: 1.6; }
-    .reflection-screen #canvasView .canvas-toolbar,
-    .reflection-screen #photoControls,
-    .reflection-screen #photoStatus { display: none; }
-    .reflection-screen #board { pointer-events: none; }
-    .sample-grid { gap: 28px; }
-    .sample-grid .clothesline-card::after {
-      content: ""; position: absolute; top: -9px; left: -14px; right: -14px;
-      border-top: 2px solid #786959; pointer-events: none;
-    }
-    .sample-grid .clothesline-card { margin-top: 10px; }
-    .clothesline-card { position: relative; min-width: 0; }
-    .clothesline-card::before {
-      content: ""; position: absolute; z-index: 1; top: -24px;
-      left: calc(50% - 5px); width: 10px; height: 30px;
-      border-radius: 2px; background: #b28b60; pointer-events: none;
-    }
-    .flip-art {
-      display: block; width: 100%; min-height: 0; padding: 0;
-      background: #f4f3ef; color: #172033; border: 1px solid #d9d3c8;
-      border-radius: 4px; cursor: pointer; transform: rotate(var(--hang, 0deg));
-      transition: transform .2s ease; text-align: left;
-    }
-    .flip-art:hover, .flip-art:focus-visible { transform: translateY(-4px); }
-    .clothesline-card:nth-child(3n + 1) { --hang: -1.2deg; }
-    .clothesline-card:nth-child(3n + 2) { --hang: .7deg; }
-    .flip-art > span { display: block; }
-    .flip-art .flip-hint {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 44px;
-      padding: 8px 12px;
-      border-top: 1px solid #d9d3c8;
-      border-radius: 0 0 3px 3px;
-      background: var(--bg);
-      color: var(--accent);
-      font-size: .8125rem;
-      font-weight: 600;
-      text-align: center;
-    }
-    .flip-art:hover .flip-hint, .flip-art:focus-visible .flip-hint {
-      background: var(--accent-soft);
-      text-decoration: underline;
-      text-underline-offset: .2em;
-    }
-    #reflectionReferenceCard {
-      width: min(100%, 12rem);
-      margin: 8px 0;
-    }
-    #reflectionReferenceCard .clothesline-card::before { display: none; }
-    .flip-art .art-back { padding: clamp(12px, 3vw, 24px); min-height: 10rem; overflow-wrap: anywhere; }
-    .art-back strong { display: block; margin-bottom: 8px; }
-    .card-caption { display: flex; gap: 8px; justify-content: space-between; align-items: baseline; padding-block: 10px; }
-    .card-caption small { color: #475569; }
-    @media (prefers-reduced-motion: reduce) {
-      .flip-art { transition: none; }
-      .flip-art:hover, .flip-art:focus-visible { transform: none; }
-    }
-    .context-panel.summary-only { grid-column: 1 / -1; width: min(100%, 50rem); justify-self: center; }
-    .board-surface { position: relative; }
-    .touch-hint { display: none; }
-    #board.is-editable .square-node { touch-action: none; -webkit-touch-callout: none; }
-    button, summary, .checkbox-row { touch-action: manipulation; }
-    .btn:active:not(:disabled), .gate-option:active, .tilt-bar button:active {
-      outline: 2px solid var(--accent);
-      outline-offset: -2px;
-    }
-    #panelStep2 { gap: 20px; }
-    .reflection-heading {
-      display: flex; flex-wrap: wrap; justify-content: space-between;
-      align-items: center; gap: 8px 16px;
-    }
-    .reflection-question { display: grid; gap: 8px; }
-    .reflection-question label { margin: 0; line-height: 1.4; }
-    .reflection-next-stage { display: grid; gap: 8px; }
-    .reflection-next {
-      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px;
-    }
-    .reflection-link {
-      min-height: 44px; padding: 4px 0; border: 0; background: none;
-      color: var(--accent); text-decoration: underline; text-underline-offset: .2em;
-    }
-    .draft-actions {
-      display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px;
-      border-top: 1px solid var(--border);
-    }
-    .mode-secondary-actions { display: contents; }
-
-    @media (max-width: 767px) {
-      .entry-gate { min-height: 100vh; min-height: 100dvh; align-items: start; padding: 20px 16px; }
-      .gate-dialog { border: 0; padding: 0; gap: 20px; }
-      .gate-header h1 { font-size: 1.5rem; }
-      #modePicker { grid-template-columns: 1fr; }
-      #modePicker .gate-option { min-height: 80px; padding: 16px; }
-      #tutorial .action-row {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-      #tutorialContinue { grid-column: 1 / -1; }
-      #tutorialBack { grid-column: 1; }
-      #tutorialSkip { grid-column: 2; }
-      .mode-secondary-actions:has(> :not([hidden])) {
-        display: flex;
-        gap: 8px;
-      }
-      .mode-secondary-actions .btn { flex: 1; }
-      .workspace-main { grid-template-columns: minmax(0, 1fr); gap: 18px; padding: 16px; padding-bottom: max(24px, env(safe-area-inset-bottom)); }
-      .context-panel { min-width: 0; padding: 16px; }
-      .btn, .gate-option, .choice-btn, .tilt-bar button, summary, .checkbox-row { min-height: 44px; }
-      .btn { white-space: normal; }
-      textarea, input[type="text"], select { font-size: 16px; }
-      .board-surface:has(.is-editable) .touch-hint { display: block; margin-bottom: 8px; font-size: .875rem; }
-      .reflection-screen #board { width: min(100%, 280px); margin-inline: auto; }
-      .tilt-bar { position: static; transform: none; margin-top: 10px; justify-content: space-between; }
-      .tilt-bar button { min-width: 44px; }
-      .compare-grid, .journey-grid { grid-template-columns: minmax(0, 1fr); }
-      .compare-item { min-width: 0; }
-      .compare-item-head { flex-wrap: wrap; }
-      .app-header { display: grid; gap: 8px; padding: 8px 12px; }
-      .app-header .desktop-progress, .app-header .desktop-reset { display: none; }
-      .workspace-top-row, .mobile-progress {
-        display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0;
-      }
-      .workspace-actions, .workspace-status { display: flex; align-items: center; gap: 6px; }
-      .workspace-actions { flex: none; }
-      .workspace-actions .btn { padding-inline: 9px; white-space: nowrap; }
-      .workspace-status { justify-content: flex-end; flex-wrap: wrap; gap: 3px 6px; }
-      .workspace-status .badge {
-        border: 0; border-radius: 999px; font-size: .6875rem; line-height: 1.35;
-        padding: 3px 8px; white-space: nowrap;
-      }
-      .mobile-step-list {
-        flex: 1; min-width: 0; flex-wrap: nowrap; overflow-x: auto; white-space: nowrap;
-        -webkit-overflow-scrolling: touch; scrollbar-width: thin;
-      }
-      .mobile-step-list li { flex: none; }
-      #workspaceShell button:not(.square-node) { min-height: 44px; }
-      .mobile-progress .btn { min-height: 44px; border-radius: 6px; white-space: nowrap; }
-      .mobile-step-list .btn { border-color: transparent; padding-inline: 9px; }
-      .mobile-progress .btn[aria-current="step"] { background: var(--text); color: var(--bg); }
-      .mobile-progress .btn:focus-visible { outline-offset: -3px; }
-      .mobile-gallery { flex: none; }
-      .session-actions { display: block; margin: 0 16px max(16px, env(safe-area-inset-bottom)); }
-      .session-actions summary { display: list-item; padding-block: 12px; cursor: pointer; color: var(--text-muted); }
-      .compare-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 8px; }
-      .compare-toolbar > .badge { justify-self: start; }
-      .compare-toolbar > .header-group { display: contents; }
-      .compare-toolbar .checkbox-row { grid-area: 2 / 1 / 3 / -1; margin: 0; }
-      .compare-toolbar .checkbox-row input { width: 18px; height: 18px; flex: none; }
-      .compare-toolbar .btn { grid-area: 1 / 2; padding-inline: 9px; }
-      #compareView > .meta-note { margin-bottom: 8px; line-height: 1.35; }
-      #compareView .compare-item { padding: 8px; }
-      #compareView .canvas-frame {
-        width: min(100%, 420px); width: min(100%, clamp(220px, 52dvh, 420px)); margin-inline: auto;
-      }
-      .card-caption { flex-wrap: wrap; }
-      .flip-art, .flip-art:hover { transform: none; transition: none; }
-    }
-    .concept-intro, .concept-picker-heading { display: none; }
-
-    .tutorial-content { display: contents; }
-
-    @media (min-width: 880px) {
-      .entry-gate {
-        padding: clamp(28px, 5vw, 80px);
-      }
-
-      .gate-dialog {
-        max-width: 1180px;
-        padding: clamp(28px, 5vw, 68px);
-        border-radius: 24px;
-      }
-
-      #tutorial {
-        grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr);
-        grid-template-rows: auto 1fr;
-        column-gap: clamp(24px, 4vw, 64px);
-        row-gap: 12px;
-        align-items: start;
-      }
-
-      #tutorialProgress {
-        grid-area: 1 / 1;
-        font-size: .875rem;
-      }
-
-      #tutorialTitle {
-        grid-area: 2 / 1;
-        font-size: clamp(2rem, 3.25vw, 3.25rem);
-        line-height: 1.1;
-        letter-spacing: -.035em;
-      }
-
-      .tutorial-content {
-        grid-area: 1 / 2 / 3;
-        display: grid;
-        align-content: space-between;
-        gap: 24px;
-        min-height: 16rem;
-        padding: clamp(20px, 3vw, 36px);
-        border-radius: 20px;
-        background: #f5f7fb;
-      }
-
-      #tutorialBody {
-        font-size: clamp(1rem, 1.35vw, 1.125rem);
-      }
-
-      #tutorial .btn,
-      .gate-dialog:has(#modePicker:not([hidden])) .btn {
-        min-height: 40px;
-      }
-
-      .gate-dialog:has(#modePicker:not([hidden])) {
-        display: grid;
-        grid-template-columns: max-content max-content minmax(0, 1fr);
-        gap: 16px 8px;
-        align-items: start;
-      }
-
-      .gate-dialog:has(#modePicker:not([hidden])) .gate-header,
-      #modeHeading,
-      #modePicker {
-        grid-column: 1 / -1;
-      }
-
-      .gate-dialog:has(#modePicker:not([hidden])) #resumeDraftBtn {
-        grid-column: 1 / -1;
-        justify-self: start;
-      }
-
-      #modeHeading {
-        font-size: clamp(1.75rem, 2.9vw, 2.75rem);
-        line-height: 1.15;
-        letter-spacing: -.025em;
-      }
-
-      #modePicker {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: clamp(12px, 2vw, 24px);
-        padding: clamp(16px, 3vw, 36px);
-        border-radius: 20px;
-        background: #f5f7fb;
-      }
-
-      #modePicker .gate-option {
-        min-height: 128px;
-        justify-content: center;
-        padding: clamp(16px, 2vw, 24px);
-      }
-
-      #modePicker .gate-option strong { font-size: 1.125rem; }
-      #modePicker .gate-option span { font-size: .9375rem; }
-
-      .gate-dialog:has(#conceptPicker:not([hidden])) {
-        display: grid;
-        grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
-        grid-template-rows: auto auto 1fr;
-        column-gap: clamp(32px, 5vw, 76px);
-        row-gap: 14px;
-        align-items: start;
-      }
-
-      .gate-dialog:has(#conceptPicker:not([hidden])) .gate-header {
-        grid-area: 1 / 1;
-        align-items: flex-start;
-        flex-direction: column;
-        gap: 24px;
-        align-self: end;
-      }
-
-      .gate-dialog:has(#conceptPicker:not([hidden])) .gate-header h1 {
-        max-width: 8em;
-        font-size: clamp(2.5rem, 4.6vw, 4rem);
-        line-height: 1.04;
-        letter-spacing: -.045em;
-      }
-
-      .gate-dialog:has(#conceptPicker:not([hidden])) .mark-4squares {
-        grid-template-columns: repeat(2, 13px);
-        gap: 4px;
-      }
-
-      .gate-dialog:has(#conceptPicker:not([hidden])) .mark-4squares span {
-        width: 13px;
-        height: 13px;
-      }
-
-      .gate-dialog:has(#conceptPicker:not([hidden])) .concept-intro {
-        display: block;
-        grid-area: 2 / 1;
-        max-width: 29ch;
-        color: var(--text-muted);
-        font-size: clamp(1rem, 1.4vw, 1.2rem);
-        line-height: 1.6;
-      }
-
-      .gate-dialog:has(#conceptPicker:not([hidden])) .concept-picker-heading {
-        display: block;
-        grid-area: 1 / 2;
-        align-self: end;
-        font-size: 1.125rem;
-      }
-
-      #conceptPicker:not([hidden]) {
-        grid-area: 2 / 2 / 4;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: clamp(14px, 2.5vw, 32px);
-        padding: clamp(16px, 3vw, 36px);
-        border-radius: 20px;
-        background: #f5f7fb;
-      }
-
-      #conceptPicker .concept-bubble {
-        width: min(100%, clamp(7rem, 12vw, 10rem));
-        background: #fff;
-        border-color: #b9c7db;
-        font-size: clamp(1rem, 1.55vw, 1.25rem);
-        font-weight: 650;
-      }
-
-      #conceptPicker .concept-bubble:hover {
-        border-color: var(--accent);
-        background: #edf3fc;
-      }
-
-      .gate-dialog:has(#conceptPicker:not([hidden])) #resumeDraftBtn {
-        grid-area: 3 / 1;
-        justify-self: start;
-        align-self: start;
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="./assets/workspace.css">
 </head>
-<body>
+<body data-flow="classic">
 
   <!-- SCREEN 0: ENTRY GATE -->
   <main id="entryGate" class="entry-gate">
@@ -1032,12 +23,12 @@
       <h2 class="concept-picker-heading" id="conceptPickerHeading">Choose a concept</h2>
 
       <div id="conceptPicker" class="gate-grid" role="group" aria-label="Choose a concept">
-        <button type="button" class="gate-option concept-bubble" onclick="chooseConcept(this)">Tension</button>
-        <button type="button" class="gate-option concept-bubble" onclick="chooseConcept(this)">Balance</button>
-        <button type="button" class="gate-option concept-bubble" onclick="chooseConcept(this)">Chaos</button>
-        <button type="button" class="gate-option concept-bubble" onclick="chooseConcept(this)">Order</button>
+        <button type="button" class="gate-option concept-bubble" data-click="choose-concept">Tension</button>
+        <button type="button" class="gate-option concept-bubble" data-click="choose-concept">Balance</button>
+        <button type="button" class="gate-option concept-bubble" data-click="choose-concept">Chaos</button>
+        <button type="button" class="gate-option concept-bubble" data-click="choose-concept">Order</button>
       </div>
-      <button type="button" id="resumeDraftBtn" class="btn" onclick="resumeDraft()" hidden>Resume Saved Session</button>
+      <button type="button" id="resumeDraftBtn" class="btn" data-click="resume-draft" hidden>Resume Saved Session</button>
       <h2 id="modeHeading" tabindex="-1" hidden></h2>
       <section id="tutorial" aria-labelledby="tutorialTitle" hidden>
         <p id="tutorialProgress" class="meta-note"></p>
@@ -1045,23 +36,23 @@
         <div class="tutorial-content">
           <p id="tutorialBody"></p>
           <div class="action-row">
-            <button id="tutorialBack" class="btn" type="button" onclick="showTutorialStep(tutorialStep - 1)" hidden>Back</button>
-            <button id="tutorialContinue" class="btn btn-primary" type="button" onclick="advanceTutorial()">Continue</button>
-            <button id="tutorialSkip" class="btn" type="button" onclick="closeTutorial()">Skip Tutorial</button>
+            <button id="tutorialBack" class="btn" type="button" data-click="show-tutorial-step" hidden>Back</button>
+            <button id="tutorialContinue" class="btn btn-primary" type="button" data-click="advance-tutorial">Continue</button>
+            <button id="tutorialSkip" class="btn" type="button" data-click="close-tutorial">Skip Tutorial</button>
           </div>
         </div>
       </section>
       <div id="modeSecondaryActions" class="mode-secondary-actions">
-        <button type="button" id="changeConcept" class="btn" onclick="showConceptPicker()" hidden>Change Concept</button>
-        <button id="reviewTutorial" type="button" class="btn" onclick="openTutorial()" hidden>View Tutorial</button>
+        <button type="button" id="changeConcept" class="btn" data-click="show-concept-picker" hidden>Change Concept</button>
+        <button id="reviewTutorial" type="button" class="btn" data-click="open-tutorial" hidden>View Tutorial</button>
       </div>
       <div id="modePicker" class="gate-grid" role="group" aria-labelledby="modeHeading" hidden>
-        <button type="button" class="gate-option" onclick="launchApp('online')">
+        <button type="button" class="gate-option" data-click="launch-app">
           <strong>Online Solo Mode</strong>
           <span>Arrange four squares on a digital canvas.</span>
         </button>
 
-        <button type="button" class="gate-option" onclick="launchApp('inperson')">
+        <button type="button" class="gate-option" data-click="launch-app-2">
           <strong>In-Person Assist</strong>
           <span>Upload a photo of your physical composition.</span>
         </button>
@@ -1074,7 +65,7 @@
     <header class="app-header">
       <div class="header-group workspace-top-row">
         <div class="header-group workspace-actions">
-          <button type="button" class="btn" onclick="openTutorial()">Tutorial</button>
+          <button type="button" class="btn" data-click="open-tutorial">Tutorial</button>
         </div>
         <div class="header-group workspace-status" role="group" aria-label="Current concept and mode">
           <span id="conceptIndicator" class="badge"></span>
@@ -1094,16 +85,16 @@
 
       <nav class="mobile-progress" aria-label="Activity steps">
         <ol id="mobileStepList" class="step-list mobile-step-list">
-          <li><button type="button" class="btn" data-step="1" onclick="navigateMobileStep(1)">1. Make a Composition</button></li>
-          <li><button type="button" class="btn" data-step="2" onclick="navigateMobileStep(2)">2. Reflection</button></li>
-          <li><button type="button" class="btn" data-step="3" onclick="navigateMobileStep(3)">3. Try Another Arrangement</button></li>
-          <li><button type="button" class="btn" data-step="4" onclick="navigateMobileStep(4)">4. Compare &amp; Export</button></li>
+          <li><button type="button" class="btn" data-step="1" data-click="navigate-mobile-step">1. Make a Composition</button></li>
+          <li><button type="button" class="btn" data-step="2" data-click="navigate-mobile-step-2">2. Reflection</button></li>
+          <li><button type="button" class="btn" data-step="3" data-click="navigate-mobile-step-3">3. Try Another Arrangement</button></li>
+          <li><button type="button" class="btn" data-step="4" data-click="navigate-mobile-step-4">4. Compare &amp; Export</button></li>
         </ol>
-        <button type="button" class="btn mobile-gallery" data-step="1.5" onclick="navigateMobileStep(1.5)">Gallery</button>
+        <button type="button" class="btn mobile-gallery" data-step="1.5" data-click="navigate-mobile-step-5">Gallery</button>
       </nav>
 
       <div class="desktop-reset">
-        <button type="button" class="btn" onclick="resetSessionStorage()">Reset Session</button>
+        <button type="button" class="btn" data-click="reset-session-storage">Reset Session</button>
       </div>
     </header>
 
@@ -1111,10 +102,10 @@
       <section id="galleryPage" aria-labelledby="galleryTitle" hidden>
         <header class="gallery-heading">
           <h2 id="galleryTitle" tabindex="-1">Gallery</h2>
-          <button type="button" class="btn btn-primary" onclick="goToStep(2)">Continue to Reflection</button>
+          <button type="button" class="btn btn-primary" data-click="go-to-step">Continue to Reflection</button>
         </header>
         <p>Tap or click a card to read the interpretation behind the arrangement.</p>
-        <details id="galleryV1" class="disclosure-block" ontoggle="showGalleryV1()" hidden>
+        <details id="galleryV1" class="disclosure-block" data-toggle="show-gallery-v1" hidden>
           <summary>View my V1</summary>
           <div id="galleryV1Preview"></div>
           <p id="galleryV1Sharing" class="meta-note"></p>
@@ -1125,8 +116,8 @@
           <blockquote>What does the space around the square that stands apart suggest to you?</blockquote>
         </details>
         <div class="action-row">
-          <button class="btn" type="button" onclick="scrollSamples(-1)">Previous Cards</button>
-          <button class="btn" type="button" onclick="scrollSamples(1)">Next Cards</button>
+          <button class="btn" type="button" data-click="scroll-samples">Previous Cards</button>
+          <button class="btn" type="button" data-click="scroll-samples-2">Next Cards</button>
         </div>
         <p id="sampleSaveHelp" class="meta-note" hidden>You can save one example for Reflection 2.<span id="sampleSaveStatus" class="sample-save-status" role="status"></span></p>
         <div id="gallerySamples" class="sample-grid" tabindex="0" role="region" aria-label="Six example compositions"></div>
@@ -1140,11 +131,11 @@
             <textarea id="galleryInterpretation" maxlength="1000" placeholder="Explain your concept and why you arranged the squares this way."></textarea>
             <p>Export your gallery and exchange files with classmates to share works and comments.</p>
             <div class="action-row">
-              <button type="button" class="btn" onclick="publishToGallery()">Add V1 to Gallery</button>
-              <button type="button" class="btn" onclick="exportGallery()">Export Gallery File</button>
+              <button type="button" class="btn" data-click="publish-to-gallery">Add V1 to Gallery</button>
+              <button type="button" class="btn" data-click="export-gallery">Export Gallery File</button>
             </div>
             <label for="galleryImport">Import peer work or comments</label>
-            <input id="galleryImport" type="file" accept=".json,application/json" onchange="importGallery(this)" />
+            <input id="galleryImport" type="file" accept=".json,application/json" data-change="import-gallery" />
             <p id="galleryStatus" role="status"></p>
         </details>
       </section>
@@ -1157,29 +148,36 @@
 
             <div id="ghostToolbar" class="header-group" hidden>
               <label class="checkbox-row">
-                <input type="checkbox" id="v1GhostToggle" onchange="renderBoard()" />
+                <input type="checkbox" id="v1GhostToggle" data-change="render-board" />
                 <span>V1 Baseline Outline</span>
               </label>
-              <button type="button" class="btn" onclick="selectChoice(0)">View Locked V1</button>
+              <button type="button" class="btn" data-click="select-choice">View Locked V1</button>
             </div>
           </div>
 
           <div class="board-surface">
-            <p class="touch-hint">Tap a square to select it. Drag to move it. Use the buttons to rotate.</p>
+            <p class="touch-hint">Drag a square with one finger. To resize it, start on the square and pinch with two fingers.</p>
           <div
             id="board"
             class="canvas-frame"
             role="application"
-            aria-label="Four squares composition board. Select a square with Tab, move with Arrow keys, rotate with R."
-            onclick="onBoardBackgroundTap(event)"
+            aria-label="Four squares composition board. Select a square with Tab, move with Arrow keys, resize with plus or minus, rotate with R."
+            data-click="on-board-background-tap"
           >
             <div id="squaresContainer"></div>
           </div>
-            <div id="tiltControl" class="tilt-bar" role="toolbar" aria-label="Square rotation" onpointerdown="event.stopPropagation()" hidden>
-              <button type="button" onclick="rotateActiveSquare(-15, event)" aria-label="Rotate counterclockwise 15 degrees">-15°</button>
+            <div id="tiltControl" class="tilt-bar" role="toolbar" aria-label="Square rotation" data-pointerdown="event-stop-propagation" hidden>
+              <button type="button" data-click="rotate-active-square" aria-label="Rotate counterclockwise 15 degrees">-15°</button>
               <output id="tiltReadout">0°</output>
-              <button type="button" onclick="rotateActiveSquare(15, event)" aria-label="Rotate clockwise 15 degrees">+15°</button>
-              <button type="button" onclick="resetActiveTilt(event)">0°</button>
+              <button type="button" data-click="rotate-active-square-2" aria-label="Rotate clockwise 15 degrees">+15°</button>
+              <button type="button" data-click="reset-active-tilt">0°</button>
+            </div>
+            <div id="squareSizeControls" class="square-size-controls" role="group" aria-labelledby="squareSizeLabel" hidden>
+              <span id="squareSizeLabel">Square size</span>
+              <button type="button" id="shrinkSquare" class="btn" data-click="resize-active-square" aria-label="Make selected square smaller">−</button>
+              <output id="squareSizeReadout" aria-label="Side length as a percentage of the board"></output>
+              <button type="button" id="growSquare" class="btn" data-click="resize-active-square-2" aria-label="Make selected square larger">+</button>
+              <span class="corner-hint">Drag any corner to resize.</span>
             </div>
 
           </div>
@@ -1188,12 +186,12 @@
             <div id="photoControls" class="panel-group">
               <h3 id="photoSectionTitle">Composition file</h3>
               <div class="action-row">
-                <button id="useCanvasBtn" type="button" class="btn" onclick="useDigitalCanvas()" hidden>Use Digital Canvas</button>
-                <button id="takePhotoBtn" type="button" class="btn btn-primary" onclick="document.getElementById('compositionCamera').click()">Take Photo</button>
-                <button id="choosePhotoBtn" type="button" class="btn" onclick="document.getElementById('compositionUpload').click()">Choose Photo or PDF</button>
+                <button id="useCanvasBtn" type="button" class="btn" data-click="use-digital-canvas" hidden>Use Digital Canvas</button>
+                <button id="takePhotoBtn" type="button" class="btn btn-primary" data-click="document-get-element-by-id">Take Photo</button>
+                <button id="choosePhotoBtn" type="button" class="btn" data-click="document-get-element-by-id-2">Choose Photo or PDF</button>
               </div>
-              <input id="compositionCamera" type="file" accept="image/*" capture="environment" onchange="loadCompositionPhoto(this)" hidden />
-              <input id="compositionUpload" type="file" accept="image/*,application/pdf,.pdf" onchange="loadCompositionPhoto(this)" hidden />
+              <input id="compositionCamera" type="file" accept="image/*" capture="environment" data-change="load-composition-photo" hidden />
+              <input id="compositionUpload" type="file" accept="image/*,application/pdf,.pdf" data-change="load-composition-photo" hidden />
             </div>
             <div class="photo-frame">
               <div id="compositionPhoto" hidden></div>
@@ -1204,8 +202,8 @@
           <!-- Version & Working Draft Management -->
           <section id="choicesTray" class="choices-bar" aria-label="Version management" hidden>
             <div class="store-actions">
-              <button type="button" id="saveNewVersionBtn" class="btn btn-primary" onclick="storeNewChoice()">Save New Version</button>
-              <button id="discardDraftBtn" type="button" class="btn" onclick="discardWorkingDraft()" hidden>Discard Changes</button>
+              <button type="button" id="saveNewVersionBtn" class="btn btn-primary" data-click="store-new-choice">Save New Version</button>
+              <button id="discardDraftBtn" type="button" class="btn" data-click="discard-working-draft" hidden>Discard Changes</button>
               <span id="versionSaveStatus" class="meta-note" role="status"></span>
             </div>
             <details id="savedVersions">
@@ -1222,10 +220,10 @@
 
             <div class="header-group">
               <label class="checkbox-row">
-                <input type="checkbox" id="galleryGhostToggle" onchange="renderCompareGallery()" checked />
+                <input type="checkbox" id="galleryGhostToggle" data-change="render-compare-gallery" checked />
                 <span>Show the original V1 as dashed outlines</span>
               </label>
-              <button type="button" class="btn" onclick="goToStep(3)">Back to Variations</button>
+              <button type="button" class="btn" data-click="go-to-step-2">Back to Variations</button>
             </div>
           </div>
 
@@ -1241,12 +239,12 @@
         <section id="onlineCreatePanel" class="panel-group" hidden>
           <h2 id="onlineCreateTitle" tabindex="-1">Make a Composition</h2>
           <p id="onlineCreateHint"></p>
-          <button type="button" class="btn btn-primary" onclick="goToStep(1.25)">Continue to Reflection</button>
+          <button type="button" class="btn btn-primary" data-click="go-to-step-3">Continue to Reflection</button>
         </section>
         <section id="inPersonCreatePanel" class="panel-group" aria-labelledby="inPersonCreateTitle" hidden>
           <h2 id="inPersonCreateTitle" class="panel-title">Add Your Composition</h2>
           <p id="createInstruction"></p>
-          <button type="button" id="inPersonReflectBtn" class="btn btn-primary" onclick="goToStep(1.25)" disabled>Continue to Reflection</button>
+          <button type="button" id="inPersonReflectBtn" class="btn btn-primary" data-click="go-to-step-3" disabled>Continue to Reflection</button>
         </section>
         <section id="panelStep1" class="panel-group" aria-labelledby="step1Title">
           <div class="disclosure-header">
@@ -1254,7 +252,7 @@
             <span id="v1LockBadge" class="badge">In progress</span>
           </div>
 
-          <button id="backToComposition" type="button" class="btn" onclick="goToStep(1)" hidden>Back to Composition</button>
+          <button id="backToComposition" type="button" class="btn" data-click="go-to-step-6" hidden>Back to Composition</button>
           <div>
             <h3>Reflection 1 · Before the Gallery</h3>
             <p id="reflectionIntro" class="meta-note">Look at your arrangement before seeing anyone else’s. A sentence or two is enough.</p>
@@ -1262,7 +260,7 @@
 
           <div>
             <label for="goalField" id="firstReflectionPrompt">What idea or feeling did you want to show? Describe one choice you made with the squares and why.</label>
-            <textarea id="goalField" placeholder="I wanted to show … so I …" oninput="validateStep1Gate()"></textarea>
+            <textarea id="goalField" placeholder="I wanted to show … so I …" data-input="validate-step1-gate"></textarea>
           </div>
 
           <div id="nextExploration">
@@ -1273,14 +271,14 @@
           <details id="reflectionHelp">
             <summary>Need help getting started?</summary>
             <p>Look at your arrangement. Pick one detail you can point to and explain what you wanted it to do.</p>
-            <ul style="padding-inline-start: 1.25rem;">
+            <ul>
               <li>Which squares did you put close together or far apart? Why?</li>
               <li>Did you line up any edges, overlap squares, or turn one? What effect did you want?</li>
               <li>Where did you leave empty space? What does it make you notice?</li>
             </ul>
           </details>
           <div class="action-row">
-            <button type="button" id="lockV1Btn" class="btn btn-primary" onclick="lockBaselineV1()">
+            <button type="button" id="lockV1Btn" class="btn btn-primary" data-click="lock-baseline-v1">
               Save & Open Gallery
             </button>
           </div>
@@ -1290,7 +288,7 @@
         <section id="panelStep2" class="panel-group" aria-labelledby="step2Title" hidden>
           <div class="reflection-heading">
             <h2 id="step2Title" class="panel-title">Reflection 2</h2>
-            <button type="button" class="btn reflection-link" onclick="goToStep(1.5)">Back to Gallery</button>
+            <button type="button" class="btn reflection-link" data-click="go-to-step-5">Back to Gallery</button>
           </div>
           <details id="reflectionReference" hidden>
             <summary>Saved example</summary>
@@ -1298,18 +296,18 @@
           </details>
           <div class="reflection-question">
             <label for="understandingShiftField" id="secondReflectionPrompt">What did the Gallery help you notice?</label>
-            <textarea id="understandingShiftField" rows="4" oninput="validateStep2Gate()"></textarea>
+            <textarea id="understandingShiftField" rows="4" data-input="validate-step2-gate"></textarea>
           </div>
-          <button type="button" id="continueReflectionBtn" class="btn btn-primary" onclick="showReflectionNext()" aria-controls="reflectionNext" disabled>Continue</button>
+          <button type="button" id="continueReflectionBtn" class="btn btn-primary" data-click="show-reflection-next" aria-controls="reflectionNext" disabled>Continue</button>
           <section id="reflectionNext" class="reflection-next-stage" aria-labelledby="reflectionNextTitle" hidden>
             <h3 id="reflectionNextTitle" class="panel-title" tabindex="-1">Choose how to continue</h3>
             <div class="reflection-next">
-              <button type="button" id="keepFirstBtn" class="btn" onclick="finishReflection(false)">Keep original</button>
-              <button type="button" id="toStep3Btn" class="btn" onclick="finishReflection(true)">Try a variation</button>
+              <button type="button" id="keepFirstBtn" class="btn" data-click="finish-reflection">Keep original</button>
+              <button type="button" id="toStep3Btn" class="btn" data-click="finish-reflection-2">Try a variation</button>
             </div>
           </section>
           <div class="draft-actions">
-            <button type="button" class="btn reflection-link" onclick="saveReflectionDraft()" aria-describedby="draftHint">Save draft</button>
+            <button type="button" class="btn reflection-link" data-click="save-reflection-draft" aria-describedby="draftHint">Save draft</button>
             <span id="draftHint" class="sr-only">Saves your notes in this browser.</span>
             <p id="draftStatus" class="meta-note" role="status"></p>
           </div>
@@ -1329,8 +327,8 @@
           </div>
 
           <div class="action-row">
-            <button type="button" class="btn" onclick="goToStep(2)">Back to Reflection</button>
-            <button id="finishVariationsBtn" type="button" class="btn btn-primary" onclick="proceedToComparison()">
+            <button type="button" class="btn" data-click="go-to-step">Back to Reflection</button>
+            <button id="finishVariationsBtn" type="button" class="btn btn-primary" data-click="proceed-to-comparison">
               Compare Versions
             </button>
           </div>
@@ -1346,20 +344,20 @@
 
           <p id="selectedSummaryBadge" class="badge badge-active">Kept: V1</p>
 
-          <button type="button" id="continueDecisionBtn" class="btn btn-primary" onclick="showDecision()" aria-controls="decisionPanel" hidden>Continue to decision</button>
+          <button type="button" id="continueDecisionBtn" class="btn btn-primary" data-click="show-decision" aria-controls="decisionPanel" hidden>Continue to decision</button>
           <section id="decisionPanel" class="panel-group" aria-labelledby="finalReasonLabel" hidden>
             <div>
               <label id="finalReasonLabel" for="finalReasonField" tabindex="-1">Why keep this version over the other saved choices?</label>
-              <textarea id="finalReasonField" oninput="hideDecisionExport()"></textarea>
+              <textarea id="finalReasonField" data-input="hide-decision-export"></textarea>
             </div>
-            <button type="button" class="btn btn-primary" onclick="recordDecisionLog()" aria-controls="decisionExport">Save Decision to Log</button>
+            <button type="button" class="btn btn-primary" data-click="record-decision-log" aria-controls="decisionExport">Save Decision to Log</button>
           </section>
 
           <section id="decisionExport" class="panel-group" aria-label="Export decision" hidden>
             <output id="finalLogOutput" class="log-output" tabindex="-1"></output>
             <div class="action-row">
-              <button type="button" class="btn" onclick="exportSessionJSON()">Export JSON</button>
-              <button type="button" class="btn" onclick="downloadSessionSummaryTxt()">Download Summary (.txt)</button>
+              <button type="button" class="btn" data-click="export-session-json">Export JSON</button>
+              <button type="button" class="btn" data-click="download-session-summary-txt">Download Summary (.txt)</button>
             </div>
           </section>
         </section>
@@ -1368,1521 +366,10 @@
     </main>
     <details class="session-actions">
       <summary>Session options</summary>
-      <button type="button" class="btn" onclick="resetSessionStorage()">Reset Session</button>
+      <button type="button" class="btn" data-click="reset-session-storage">Reset Session</button>
     </details>
   </div>
 
-  <script>
-    const STORAGE_KEY = "FOUR_SQUARES_SESSION_STATE_V3";
-
-    let mode = "inperson";
-    let currentStep = 1;
-    let v1Locked = false;
-    let isWorkingDraftDirty = false;
-    let choices = [];
-    let activeChoiceIdx = 0;
-    let keptChoiceIdx = 0;
-    let workingSquares = [];
-    let activeSquareId = null;
-    let squareGesture = null;
-
-    let firstReflection = null;
-    let secondReflection = null;
-    let workingPhoto = "";
-    let photoRequest = 0;
-    let galleryPostId = null;
-    const inspiration = new Set();
-    const gallery = new Map();
-    const galleryKey = "4SQUARES_GALLERY_V1";
-    const commentTypes = ["I Notice", "I Wonder", "What If"];
-    const concepts = ["Tension", "Balance", "Chaos", "Order"];
-    const photoPattern = /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/;
-
-    function galleryPosts() {
-      return [...gallery.values()].filter(post => post.concept === selectedConcept);
-    }
-
-    const pdfPattern = /^data:application\/pdf;base64,[A-Za-z0-9+/=]+$/;
-    const maxPdfBytes = 1_000_000;
-
-    function photoPreview(src) {
-      if (pdfPattern.test(src)) {
-        const preview = document.createElement("div");
-        const frame = document.createElement("iframe");
-        frame.title = "Four-square composition PDF";
-        frame.style.cssText = "display:block;width:100%;height:clamp(14rem,55vh,32rem);border:0";
-        frame.src = src;
-        preview.append(frame);
-        return preview;
-      }
-      const image = document.createElement("img");
-      image.className = "composition-photo";
-      image.alt = "Photograph of a four-square composition";
-      image.src = src;
-      return image;
-    }
-
-    function useDigitalCanvas() {
-      if (mode !== "inperson" || currentStep !== 3) return;
-      photoRequest++;
-      workingPhoto = "";
-      document.getElementById("photoStatus").textContent = "";
-      syncPhotoWorkspace();
-      updateDraftStatusUI();
-      renderBoard();
-      squareButtonMap.values().next().value?.focus();
-    }
-
-    function syncPhotoWorkspace() {
-      const usePhoto = mode === "inperson";
-      document.getElementById("backToComposition").hidden = v1Locked;
-      document.getElementById("nextExploration").hidden = usePhoto || currentStep === 1.25;
-      document.getElementById("reflectionIntro").hidden = usePhoto;
-      document.getElementById("firstReflectionPrompt").textContent = usePhoto
-        ? "Why did you arrange the squares this way?"
-        : "What idea or feeling did you want to show? Describe one choice you made with the squares and why.";
-      document.getElementById("createInstruction").textContent =
-        `Add your four-square arrangement for ${selectedConcept}.`;
-      document.getElementById("photoWorkspace").hidden = !usePhoto;
-      document.getElementById("variationInstruction").textContent = usePhoto
-        ? "Try a new arrangement on the canvas or add a photo or PDF. Save it as a new version."
-        : "Move or turn a square to try an idea from your reflection. Choose Save New Version to keep both arrangements.";
-      const showBoard = !usePhoto || (currentStep === 3 && !workingPhoto);
-      document.getElementById("board").hidden = !showBoard;
-      document.getElementById("useCanvasBtn").hidden = currentStep !== 3 || !workingPhoto;
-      document.getElementById("ghostToolbar").hidden = usePhoto || currentStep !== 3;
-      document.getElementById("galleryGhostToggle").closest("label").hidden = usePhoto;
-      const canAddPhoto = usePhoto && ((currentStep === 1 && !v1Locked) || currentStep === 3);
-      document.getElementById("photoControls").hidden = !canAddPhoto;
-      for (const id of ["compositionCamera", "compositionUpload", "takePhotoBtn", "choosePhotoBtn"]) {
-        document.getElementById(id).disabled = !canAddPhoto;
-      }
-      const preview = document.getElementById("compositionPhoto");
-      preview.hidden = !workingPhoto;
-      if (preview.dataset.source !== workingPhoto) {
-        preview.replaceChildren();
-        if (workingPhoto) {
-          preview.append(photoPreview(workingPhoto));
-          if (pdfPattern.test(workingPhoto)) {
-            const link = document.createElement("a");
-            link.href = workingPhoto;
-            link.download = "composition.pdf";
-            link.textContent = "Download PDF";
-            preview.append(link);
-          }
-        }
-        preview.dataset.source = workingPhoto;
-      }
-    }
-
-    async function loadCompositionPhoto(input) {
-      const file = input.files[0];
-      if (!file) return;
-      const request = ++photoRequest;
-      const status = document.getElementById("photoStatus");
-      const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
-      status.textContent = isPdf ? "Reading PDF…" : "Reading photo…";
-      try {
-        let source;
-        if (isPdf) {
-          if (file.size > maxPdfBytes) {
-            status.textContent = "Choose a PDF under 1 MB, or use a photo.";
-            return;
-          }
-          if (!(await file.slice(0, 5).text()).startsWith("%PDF-")) throw new Error("Invalid PDF");
-          source = await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve("data:application/pdf;base64," + reader.result.split(",")[1]);
-            reader.onerror = () => reject(reader.error);
-            reader.readAsDataURL(file);
-          });
-        } else {
-          const bitmap = await createImageBitmap(file);
-          const scale = Math.min(1, 960 / Math.max(bitmap.width, bitmap.height));
-          const canvas = document.createElement("canvas");
-          canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-          canvas.height = Math.max(1, Math.round(bitmap.height * scale));
-          canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
-          bitmap.close();
-          source = canvas.toDataURL("image/jpeg", 0.78);
-        }
-        if (request !== photoRequest || input.disabled || mode !== "inperson" || document.getElementById("workspaceShell").hidden) return;
-        workingPhoto = source;
-        status.textContent = isPdf ? "PDF added." : "Photo added.";
-        syncPhotoWorkspace();
-        updateDraftStatusUI();
-        validateStep1Gate();
-      } catch {
-        if (request === photoRequest) status.textContent = isPdf ? "This PDF could not be opened." : "This image could not be opened. Try a JPEG or PNG.";
-      } finally {
-        if (request === photoRequest) input.value = "";
-      }
-    }
-
-    function cacheGallery(message) {
-      const status = document.getElementById("galleryStatus");
-      let stored = true;
-      try {
-        localStorage.setItem(galleryKey, JSON.stringify([...gallery.values()]));
-        status.textContent = message;
-      } catch {
-        stored = false;
-        status.textContent = message + " Export the gallery file to keep a copy.";
-      }
-      renderGallery();
-      return stored;
-    }
-
-    function publishToGallery() {
-      if (!firstReflection || galleryPostId) return;
-      const baseline = choices[0];
-      const interpretation = document.getElementById("galleryInterpretation").value.trim();
-      if (!interpretation) {
-        document.getElementById("galleryInterpretation").focus();
-        return;
-      }
-      galleryPostId = crypto.randomUUID();
-      gallery.set(galleryPostId, {
-        id: galleryPostId, concept: selectedConcept, interpretation,
-        photo: baseline.photo, squares: baseline.photo ? [] : clone(baseline.squares), comments: []
-      });
-      if (cacheGallery("Anonymous composition added.")) persistSessionState();
-    }
-
-    function readGalleryPosts(posts) {
-      if (!Array.isArray(posts) || posts.length > 100) throw new Error("Invalid gallery.");
-      return posts.map(post => {
-        if (!post || !/^[a-f0-9-]{36}$/.test(post.id) || !concepts.includes(post.concept)
-            || !Array.isArray(post.comments) || post.comments.length > 200) throw new Error("Invalid gallery.");
-        const photo = typeof post.photo === "string" && post.photo.length < 2_000_000 && (photoPattern.test(post.photo) || pdfPattern.test(post.photo)) ? post.photo : "";
-        if (!photo && (!Array.isArray(post.squares) || post.squares.length !== 4 ||
-            post.squares.some(sq => !sq || ![sq.x, sq.y, sq.rot].every(Number.isFinite)
-              || sq.x < 0 || sq.x > 100 || sq.y < 0 || sq.y > 100))) throw new Error("Invalid composition.");
-        const squares = photo ? [] : post.squares.map(({x, y, rot}) => ({x, y, rot}));
-        const comments = post.comments.filter(comment => comment && /^[a-f0-9-]{36}$/.test(comment.id)
-          && commentTypes.includes(comment.type) && typeof comment.text === "string" && comment.text.length <= 1000)
-          .map(({id, type, text}) => ({id, type, text}));
-        return { id: post.id, concept: post.concept, photo, squares, comments,
-          interpretation: typeof post.interpretation === "string" ? post.interpretation.slice(0, 1000) : "" };
-      });
-    }
-
-    function mergeGallery(posts) {
-      for (const post of posts) {
-        const existing = gallery.get(post.id);
-        if (!existing) gallery.set(post.id, post);
-        else {
-          const ids = new Set(existing.comments.map(comment => comment.id));
-          for (const comment of post.comments) {
-            if (!ids.has(comment.id)) {
-              existing.comments.push(comment);
-              ids.add(comment.id);
-            }
-          }
-        }
-      }
-    }
-
-    try {
-      mergeGallery(readGalleryPosts(JSON.parse(localStorage.getItem(galleryKey) || "[]")));
-    } catch {}
-
-    async function importGallery(input) {
-      const file = input.files[0];
-      if (!file) return;
-      try {
-        if (file.size > 20_000_000) throw new Error("Gallery file is too large.");
-        const data = JSON.parse(await file.text());
-        if (data.format !== "4squares-gallery-v1") throw new Error("Invalid gallery format.");
-        mergeGallery(readGalleryPosts(data.posts));
-        cacheGallery("Gallery imported. Works appear under their original concept.");
-      } catch {
-        document.getElementById("galleryStatus").textContent = "This file could not be imported as a 4SQUARES gallery.";
-      } finally {
-        input.value = "";
-      }
-    }
-
-    function exportGallery() {
-      const blob = new Blob([JSON.stringify({ format: "4squares-gallery-v1", posts: [...gallery.values()] })], { type: "application/json" });
-      triggerFileDownload(blob, "4squares-gallery.json");
-    }
-
-    const galleryExamples = {
-      Tension: [
-        ["Held Apart", [[13,25,0],[30,37,0],[19,53,0],[69,44,19]]],
-        ["Near Collision", [[18,30,-12],[36,41,18],[56,51,-16],[69,66,13]]],
-        ["On Edge", [[18,65,0],[38,65,0],[58,65,0],[57,28,43]]],
-        ["Squeezed", [[16, 41, 0], [34, 41, 0], [51, 41, 0], [67, 41, 0]]],
-        ["Standoff", [[15, 25, 0], [15, 57, 0], [69, 25, 0], [69, 57, 0]]],
-        ["Pulled Away", [[16, 43, 0], [35, 43, 0], [54, 43, 0], [72, 21, 28]]]
-      ],
-      Balance: [
-        ["Counterweight", [[18,26,0],[18,46,0],[18,66,0],[67,46,45]]],
-        ["Two Pairs", [[21,20,0],[40,20,0],[43,64,0],[62,64,0]]],
-        ["Balanced Around a Gap", [[42,14,0],[70,42,0],[42,70,0],[14,42,0]]],
-        ["Mirror Pairs", [[18, 25, -20], [18, 60, 20], [66, 25, 20], [66, 60, -20]]],
-        ["Quiet Center", [[26, 31, 0], [41, 31, 0], [41, 49, 0], [56, 49, 0]]],
-        ["Corner Weights", [[13, 13, 0], [69, 13, 0], [13, 69, 0], [69, 69, 0]]]
-      ],
-      Chaos: [
-        ["Scatter", [[13,19,-24],[67,12,31],[42,50,42],[21,70,-12]]],
-        ["Collision", [[30,29,19],[43,39,-38],[51,46,13],[41,58,52]]],
-        ["Broken Sequence", [[14,64,17],[32,20,36],[54,49,-27],[70,19,4]]],
-        ["Interrupted Grid", [[23, 23, 0], [59, 22, 24], [19, 66, -19], [48, 49, 43]]],
-        ["Uneven Drift", [[10, 29, -11], [28, 43, 36], [67, 47, -34], [52, 72, 14]]],
-        ["Crossing Paths", [[27, 21, 35], [54, 34, -30], [31, 53, -19], [62, 65, 39]]]
-      ],
-      Order: [
-        ["Grid", [[25,25,0],[58,25,0],[25,58,0],[58,58,0]]],
-        ["Even Interval", [[9,42,0],[31,42,0],[53,42,0],[75,42,0]]],
-        ["Measured Steps", [[13,14,0],[31,32,0],[49,50,0],[67,68,0]]],
-        ["Neat Column", [[42, 8, 0], [42, 30, 0], [42, 52, 0], [42, 74, 0]]],
-        ["Repeating Tilt", [[13, 25, 25], [39, 25, 25], [13, 59, 25], [39, 59, 25]]],
-        ["Right Angle", [[16, 22, 0], [16, 46, 0], [16, 70, 0], [40, 70, 0]]]
-      ]
-    };
-
-    const sampleReadings = {
-      Tension: [
-        "I read tension as pressure between a group and an outsider. I clustered three squares and kept one tilted across the gap.",
-        "Tension can feel like a collision that has not happened yet. I placed the squares close together at competing angles.",
-        "I wanted the feeling of something about to tip. One tilted square sits above a stable row.",
-        "The gaps shrink until the last two squares overlap. I wanted the row to feel compressed.",
-        "I placed two pairs across a wide gap. The empty middle feels like a space neither side will cross.",
-        "The tilted square breaks away from the row. I wanted the others to seem as if they were holding it back."
-      ],
-      Balance: [
-        "Balance can be uneven. The distance and tilt of the lone square counter the weight of the column.",
-        "I used two pairs and shifted them in opposite directions to spread the visual weight across the page.",
-        "I treated the empty center as a space the four squares could balance around.",
-        "I mirrored the angles on both sides so the rotation feels balanced.",
-        "I kept the arrangement close to the center and stepped the two pairs in opposite directions.",
-        "I gave each corner the same visual weight and left the middle open."
-      ],
-      Chaos: [
-        "I used uneven gaps and unrelated angles so the eye has several places to jump.",
-        "I wanted chaos to feel crowded. The squares collide from several directions and the edges compete for attention.",
-        "I started with a left-to-right sequence and broke it with abrupt jumps in height and rotation.",
-        "I used a familiar grid and then disrupted its positions and angles.",
-        "I left a large gap after the first pair and turned each square independently to break the rhythm.",
-        "The alternating positions and opposing angles make the eye zigzag through the frame."
-      ],
-      Order: [
-        "I used a repeated row and column spacing so each square has a predictable place.",
-        "For me, order is repetition. Equal intervals make the four squares read like a steady beat.",
-        "I repeated the same horizontal and vertical step. The diagonal has a predictable direction without a grid.",
-        "I aligned all four squares vertically and repeated the same gap.",
-        "The squares are tilted, but repeating the same angle and spacing makes them feel ordered.",
-        "Three squares trace a column and the last one turns the corner at the same interval."
-      ]
-    };
-
-    function createFlipCard(title, source, reading, layout, photo) {
-      const figure = document.createElement("figure");
-      figure.className = "clothesline-card";
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "flip-art";
-      const front = document.createElement("span");
-      front.className = "canvas-frame sample-art";
-      front.setAttribute("role", "img");
-      front.setAttribute("aria-label", photo ? "Physical composition photo" : layout.map(([x,y,rot], i) =>
-        `Square ${i + 1} at ${x}% across and ${y}% down, rotated ${rot} degrees`).join(". "));
-      if (pdfPattern.test(photo || "")) front.textContent = "PDF composition";
-      else if (photo) front.append(photoPreview(photo));
-      else for (const [x, y, rot] of layout) {
-        const tile = document.createElement("span");
-        tile.className = "sample-square";
-        tile.style.left = x + "%";
-        tile.style.top = y + "%";
-        tile.style.transform = `rotate(${rot}deg)`;
-        front.append(tile);
-      }
-      const back = document.createElement("span");
-      back.className = "art-back";
-      back.hidden = true;
-      const heading = document.createElement("strong");
-      heading.textContent = "Creator’s Interpretation";
-      const explanation = document.createElement("span");
-      explanation.textContent = reading;
-      back.append(heading, explanation);
-      const hint = document.createElement("span");
-      hint.className = "flip-hint";
-      hint.setAttribute("aria-hidden", "true");
-      button.append(front, back, hint);
-      const updateSide = flipped => {
-        front.hidden = flipped;
-        back.hidden = !flipped;
-        hint.textContent = flipped ? "Back to composition" : "Flip to read interpretation";
-        button.setAttribute("aria-expanded", String(flipped));
-        button.setAttribute("aria-label", flipped ? `Show composition: ${title}` : `Read interpretation: ${title}`);
-        button.setAttribute("aria-description", flipped ? reading : front.getAttribute("aria-label"));
-      };
-      updateSide(false);
-      button.onclick = () => updateSide(back.hidden);
-      const caption = document.createElement("figcaption");
-      caption.className = "card-caption";
-      const name = document.createElement("strong");
-      name.textContent = title;
-      const label = document.createElement("small");
-      label.textContent = source;
-      caption.append(name, label);
-      figure.append(button, caption);
-      if (pdfPattern.test(photo || "")) {
-        const link = document.createElement("a");
-        link.href = photo;
-        link.download = "composition.pdf";
-        link.textContent = "Download composition PDF";
-        figure.append(link);
-      }
-      return figure;
-    }
-
-    function scrollSamples(direction) {
-      const grid = document.getElementById("gallerySamples");
-      const first = grid.children[0];
-      const second = grid.children[1];
-      if (!first || !second) return;
-      grid.scrollBy({
-        left: direction * (second.offsetLeft - first.offsetLeft),
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
-      });
-    }
-
-    let markedSample = null;
-    let compareRequested = false;
-
-    function gallerySampleCard(index) {
-      const [title, layout] = galleryExamples[selectedConcept][index];
-      return createFlipCard(title, "Sample / AI-generated", sampleReadings[selectedConcept][index], layout);
-    }
-
-    function renderReflectionReference() {
-      const details = document.getElementById("reflectionReference");
-      const container = document.getElementById("reflectionReferenceCard");
-      const hasSavedCard = mode === "online" && Boolean(galleryExamples[selectedConcept]?.[markedSample]);
-      details.hidden = !hasSavedCard;
-      details.open = hasSavedCard;
-      container.replaceChildren();
-      if (hasSavedCard) container.append(gallerySampleCard(markedSample));
-
-      document.getElementById("secondReflectionPrompt").textContent = hasSavedCard
-        ? "What’s one difference between your arrangement and the saved example?"
-        : "What did the Gallery help you notice?";
-    }
-
-    function renderGallerySamples() {
-      const grid = document.getElementById("gallerySamples");
-      grid.replaceChildren();
-      document.getElementById("galleryTitle").textContent = selectedConcept + " Gallery";
-      document.getElementById("sampleSaveHelp").hidden = mode !== "online";
-      const status = document.getElementById("sampleSaveStatus");
-      const examples = galleryExamples[selectedConcept] || [];
-      status.textContent = "";
-      const marks = [];
-      const updateMarks = () => marks.forEach((button, index) => {
-        const saved = index === markedSample;
-        button.setAttribute("aria-pressed", String(saved));
-        button.textContent = saved ? "Saved for Reflection ✓" : "Save for Reflection";
-      });
-      examples.forEach(([title], index) => {
-        const card = gallerySampleCard(index);
-        if (mode === "online") {
-          const mark = document.createElement("button");
-          mark.type = "button";
-          mark.className = "btn btn-sm sample-save";
-          marks.push(mark);
-          mark.onclick = () => {
-            const previousTitle = examples[markedSample]?.[0];
-            markedSample = markedSample === index ? null : index;
-            updateMarks();
-            if (markedSample === null) status.textContent = `Removed “${title}” from Reflection 2.`;
-            else if (previousTitle) status.textContent = `Saved “${title}” in place of “${previousTitle}”.`;
-            else status.textContent = `Saved “${title}” for Reflection 2.`;
-            persistSessionState();
-          };
-          card.append(mark);
-        }
-        grid.append(card);
-      });
-      updateMarks();
-      grid.scrollLeft = 0;
-    }
-
-    function showGalleryV1() {
-      const details = document.getElementById("galleryV1");
-      const preview = document.getElementById("galleryV1Preview");
-      const photo = choices[0]?.photo;
-      if (details.hidden || !details.open || !photo || preview.dataset.source === photo) return;
-      preview.replaceChildren(photoPreview(photo));
-      if (pdfPattern.test(photo)) {
-        const link = document.createElement("a");
-        link.href = photo;
-        link.download = "my-v1.pdf";
-        link.textContent = "Download my V1 PDF";
-        preview.append(link);
-      }
-      preview.dataset.source = photo;
-    }
-
-    function renderGallery() {
-      renderGallerySamples();
-      const myV1 = document.getElementById("galleryV1");
-      myV1.hidden = mode !== "inperson" || !choices[0]?.photo;
-      if (myV1.hidden) myV1.open = false;
-      document.getElementById("galleryV1Sharing").textContent = gallery.has(galleryPostId)
-        ? "You added this composition to the Gallery anonymously."
-        : "This is your own composition. It only appears in the Gallery if you choose Add V1 to Gallery.";
-      showGalleryV1();
-      const list = document.getElementById("galleryList");
-      list.replaceChildren();
-      document.querySelector('[onclick="publishToGallery()"]').disabled = Boolean(galleryPostId);
-      const posts = galleryPosts();
-      document.getElementById("peerWorks").hidden = !posts.length;
-      posts.forEach((post, index) => {
-        const card = document.createElement("article");
-        card.className = "disclosure-block";
-        card.append(createFlipCard(
-          "Anonymous Composition " + (index + 1), "Peer Work",
-          post.interpretation || "The creator shared this work without a written interpretation.",
-          post.squares.map(({x, y, rot}) => [x, y, rot]), post.photo
-        ));
-        const discussion = document.createElement("details");
-        const discussionLabel = document.createElement("summary");
-        discussionLabel.textContent = "Comments";
-        discussion.append(discussionLabel);
-        for (const comment of post.comments) {
-          const quote = document.createElement("blockquote");
-          quote.textContent = comment.type + " · " + comment.text;
-          discussion.append(quote);
-        }
-        const mark = document.createElement("button");
-        mark.type = "button";
-        mark.className = "btn";
-        mark.textContent = "This Made Me Rethink My Design";
-        mark.setAttribute("aria-pressed", inspiration.has(post.id));
-        mark.onclick = () => {
-          if (inspiration.has(post.id)) inspiration.delete(post.id);
-          else inspiration.add(post.id);
-          mark.setAttribute("aria-pressed", inspiration.has(post.id));
-          persistSessionState();
-        };
-        const form = document.createElement("form");
-        const typeLabel = document.createElement("label");
-        const type = document.createElement("select");
-        typeLabel.append("Comment starter", type);
-        commentTypes.forEach(label => type.add(new Option(label)));
-        const textLabel = document.createElement("label");
-        const field = document.createElement("textarea");
-        field.required = true;
-        field.maxLength = 1000;
-        textLabel.append("Anonymous comment", field);
-        const submit = document.createElement("button");
-        submit.className = "btn";
-        submit.textContent = "Post Comment";
-        form.append(typeLabel, textLabel, submit);
-        form.onsubmit = event => {
-          event.preventDefault();
-          const value = field.value.trim();
-          if (!value || post.comments.length >= 200) return;
-          post.comments.push({ id: crypto.randomUUID(), type: type.value, text: value });
-          cacheGallery("Comment added. Export the gallery file to share it.");
-          document.getElementById("galleryStatus").tabIndex = -1;
-          document.getElementById("galleryStatus").focus();
-        };
-        discussion.append(form);
-        card.append(mark, discussion);
-        list.append(card);
-      });
-    }
-
-    const squareButtonMap = new Map();
-
-    function clone(data) {
-      return JSON.parse(JSON.stringify(data));
-    }
-
-    function freezeV1Choice(choiceObj) {
-      const copy = clone(choiceObj);
-      copy.immutable = true;
-      copy.squares.forEach(sq => Object.freeze(sq));
-      Object.freeze(copy.squares);
-      return copy;
-    }
-
-    function squaresEqual(a, b) {
-      if (!a || !b || a.length !== b.length) return false;
-      return a.every((s, i) => s.x === b[i].x && s.y === b[i].y && s.rot === b[i].rot);
-    }
-
-    let selectedConcept = "";
-
-    let tutorialFromWorkspace = false;
-    let tutorialStep = 0;
-    const tutorialPages = [
-      ["Express a concept", "Use exactly four squares to communicate the concept you chose. Start with one spatial choice: change the gaps, align the edges, overlap two squares, or rotate one. Think about how that choice changes the feeling."],
-      ["Create your first composition", "Online, drag a square or focus it with Tab and use the arrow keys to move it. Press R to rotate. In person, arrange four physical squares, then use Take Photo on your phone or Choose Photo or PDF to select an existing image or PDF."],
-      ["Record your own interpretation", "Before opening the Gallery, write what the concept means to you and why you placed the squares that way. Save this initial composition and reflection as V1."],
-      ["Reflect after the Gallery", "Flip Gallery cards to see how others interpreted the same concept. Then record what changed or stayed the same in your understanding. You can finish with V1 or save a new version."]
-    ];
-
-    function showTutorialStep(index) {
-      tutorialStep = index;
-      const [title, body] = tutorialPages[index];
-      const heading = document.getElementById("tutorialTitle");
-      document.getElementById("tutorialProgress").textContent = `Tutorial ${index + 1} of ${tutorialPages.length}`;
-      heading.textContent = title;
-      document.getElementById("tutorialBody").textContent = body;
-      document.getElementById("tutorialBack").hidden = index === 0;
-      document.getElementById("tutorialContinue").textContent = index === tutorialPages.length - 1
-        ? (tutorialFromWorkspace ? "Return to Workspace" : "Choose Participation Mode")
-        : "Continue";
-      heading.focus();
-    }
-
-    function advanceTutorial() {
-      if (tutorialStep === tutorialPages.length - 1) closeTutorial();
-      else showTutorialStep(tutorialStep + 1);
-    }
-
-    function openTutorial() {
-      const shell = document.getElementById("workspaceShell");
-      tutorialFromWorkspace = !shell.hidden;
-      shell.hidden = true;
-      document.getElementById("entryGate").hidden = false;
-      for (const id of ["modeHeading", "modePicker", "changeConcept", "reviewTutorial", "resumeDraftBtn"]) {
-        document.getElementById(id).hidden = true;
-      }
-      document.getElementById("tutorial").hidden = false;
-      showTutorialStep(0);
-    }
-
-    function closeTutorial() {
-      document.getElementById("tutorial").hidden = true;
-      if (tutorialFromWorkspace) {
-        document.getElementById("entryGate").hidden = true;
-        document.getElementById("workspaceShell").hidden = false;
-        document.querySelector('#workspaceShell [onclick="openTutorial()"]').focus();
-      } else {
-        for (const id of ["modeHeading", "modePicker", "changeConcept", "reviewTutorial"]) {
-          document.getElementById(id).hidden = false;
-        }
-        refreshResumeButton();
-        document.getElementById("modeHeading").focus();
-      }
-    }
-
-    function chooseConcept(button) {
-      selectedConcept = button.textContent.trim();
-      document.getElementById("conceptPicker").hidden = true;
-      document.getElementById("modePicker").hidden = false;
-      document.getElementById("changeConcept").hidden = false;
-      const heading = document.getElementById("modeHeading");
-      heading.textContent = selectedConcept + " — Choose how to participate";
-      heading.hidden = false;
-      openTutorial();
-    }
-
-    function showConceptPicker() {
-      document.getElementById("reviewTutorial").hidden = true;
-      document.getElementById("modePicker").hidden = true;
-      document.getElementById("modeHeading").hidden = true;
-      document.getElementById("changeConcept").hidden = true;
-      document.getElementById("conceptPicker").hidden = false;
-      const bubbles = [...document.querySelectorAll(".concept-bubble")];
-      (bubbles.find(button => button.textContent.trim() === selectedConcept) || bubbles[0]).focus();
-    }
-
-    function launchApp(selectedMode) {
-      document.getElementById("conceptIndicator").textContent = selectedConcept;
-      mode = selectedMode;
-      document.getElementById("entryGate").hidden = true;
-      document.getElementById("workspaceShell").hidden = false;
-
-      const isOnline = mode === "online";
-      document.getElementById("modeIndicator").textContent = isOnline
-        ? "Online Solo Mode"
-        : "In-Person Assist";
-      startBlankSession();
-
-    }
-
-    function startBlankSession() {
-      photoRequest++;
-      firstReflection = null;
-      secondReflection = null;
-      workingPhoto = "";
-      galleryPostId = null;
-      inspiration.clear();
-      markedSample = null;
-      compareRequested = false;
-      document.getElementById("reflectionHelp").open = false;
-      document.getElementById("draftStatus").textContent = "";
-      document.getElementById("galleryStatus").textContent = "";
-      document.getElementById("galleryInterpretation").value = "";
-      activeSquareId = null;
-      document.getElementById("compositionUpload").value = "";
-      document.getElementById("compositionCamera").value = "";
-      document.getElementById("photoStatus").textContent = "";
-      v1Locked = false;
-      isWorkingDraftDirty = false;
-
-      const defaultGrid = [
-        { id: 1, x: 26, y: 26, rot: 0 },
-        { id: 2, x: 56, y: 26, rot: 0 },
-        { id: 3, x: 26, y: 56, rot: 0 },
-        { id: 4, x: 56, y: 56, rot: 0 }
-      ];
-
-      choices = [{
-        title: "V1: Baseline",
-        source: "Locked Baseline",
-        reflectionLink: "Initial baseline before the Gallery",
-        note: "Initial arrangement.",
-        immutable: false,
-        squares: clone(defaultGrid)
-      }];
-
-      activeChoiceIdx = 0;
-      keptChoiceIdx = 0;
-      workingSquares = clone(defaultGrid);
-
-      document.getElementById("goalField").value = "";
-      document.getElementById("goalField").readOnly = false;
-      document.getElementById("nextField").value = "";
-      document.getElementById("nextField").readOnly = false;
-      document.getElementById("understandingShiftField").value = "";
-      document.getElementById("finalReasonField").value = "";
-      document.getElementById("v1LockBadge").textContent = "In progress";
-      document.getElementById("lockV1Btn").textContent = "Save & Open Gallery";
-
-      document.getElementById("savedVersions").open = false;
-      document.getElementById("galleryV1").open = false;
-      const galleryV1Preview = document.getElementById("galleryV1Preview");
-      galleryV1Preview.replaceChildren();
-      delete galleryV1Preview.dataset.source;
-      hideDecisionExport();
-      document.getElementById("v1GhostToggle").checked = false;
-      validateStep1Gate();
-      goToStep(1);
-    }
-
-    function validateStep1Gate() {
-      document.getElementById("inPersonReflectBtn").disabled = !workingPhoto;
-      const hasGoal = document.getElementById("goalField").value.trim().length > 0;
-      document.getElementById("lockV1Btn").disabled = !hasGoal || (mode === "inperson" && !workingPhoto);
-    }
-
-    function lockBaselineV1() {
-      if (!v1Locked) {
-        if (document.getElementById("lockV1Btn").disabled) return;
-        firstReflection = {
-          text: document.getElementById("goalField").value.trim(),
-          next: document.getElementById("nextField").value.trim()
-        };
-        choices[0].photo = workingPhoto;
-        choices[0].squares = clone(workingSquares);
-        choices[0].title = "V1: Original";
-        choices[0] = freezeV1Choice(choices[0]);
-        v1Locked = true;
-        isWorkingDraftDirty = false;
-        document.getElementById("goalField").readOnly = true;
-        document.getElementById("nextField").readOnly = true;
-        document.getElementById("v1LockBadge").textContent = "Saved";
-        document.getElementById("lockV1Btn").textContent = "Open Gallery";
-      }
-      activeChoiceIdx = 0;
-      persistSessionState();
-      goToStep(1.5);
-    }
-
-    function validateStep2Gate() {
-      const hasResponse = Boolean(document.getElementById("understandingShiftField").value.trim());
-      if (!hasResponse) document.getElementById("reflectionNext").hidden = true;
-      const nextVisible = !document.getElementById("reflectionNext").hidden;
-      const continueButton = document.getElementById("continueReflectionBtn");
-      continueButton.disabled = !hasResponse;
-      continueButton.hidden = nextVisible;
-      updateMobileSteps();
-    }
-
-    function showReflectionNext() {
-      if (document.getElementById("continueReflectionBtn").disabled) return;
-      document.getElementById("reflectionNext").hidden = false;
-      validateStep2Gate();
-      document.getElementById("reflectionNextTitle").focus();
-    }
-
-    function finishReflection(redesign) {
-      const text = document.getElementById("understandingShiftField").value.trim();
-      if (!text) {
-        document.getElementById("understandingShiftField").focus();
-        return;
-      }
-      secondReflection = { text, inspiration: [...inspiration] };
-      compareRequested = false;
-      if (!redesign) keptChoiceIdx = 0;
-      goToStep(redesign ? 3 : 4);
-      persistSessionState();
-    }
-
-    const mobileLayout = window.matchMedia("(max-width: 767px)");
-    const mobileProgress = document.querySelector(".mobile-progress");
-    const mobileStepList = document.getElementById("mobileStepList");
-
-    function updateMobileSteps() {
-      const reflectionReady = !document.getElementById("reflectionNext").hidden;
-      const availableSteps = {
-        1: true,
-        1.5: v1Locked,
-        2: v1Locked,
-        3: currentStep === 2 ? reflectionReady : Boolean(secondReflection),
-        4: currentStep === 2 ? reflectionReady && Boolean(secondReflection) : Boolean(secondReflection)
-      };
-      const activeStep = currentStep === 1.25 ? 1 : currentStep;
-      for (const button of mobileProgress.querySelectorAll("[data-step]")) {
-        const step = Number(button.dataset.step);
-        const active = step === activeStep;
-        button.disabled = !active && !availableSteps[step];
-        if (active) button.setAttribute("aria-current", "step");
-        else button.removeAttribute("aria-current");
-      }
-      const showsComparison = mode === "online" && choices.length > 1 &&
-        (currentStep !== 4 || compareRequested);
-      mobileProgress.querySelector('[data-step="4"]').textContent =
-        showsComparison ? "4. Compare & Export" : "4. Summary & Export";
-    }
-
-    function revealMobileStep() {
-      const active = mobileStepList.querySelector('[aria-current="step"]');
-      if (!mobileLayout.matches || !active) return;
-      const listBounds = mobileStepList.getBoundingClientRect();
-      const buttonBounds = active.getBoundingClientRect();
-      if (buttonBounds.left < listBounds.left || buttonBounds.right > listBounds.right) {
-        mobileStepList.scrollLeft += buttonBounds.left - listBounds.left -
-          (listBounds.width - buttonBounds.width) / 2;
-      }
-    }
-
-    mobileLayout.addEventListener("change", revealMobileStep);
-    mobileLayout.addEventListener("change", orderWalkthroughControls);
-
-    function orderWalkthroughControls() {
-      const previousFocus = document.activeElement;
-      const tutorialContinue = document.getElementById("tutorialContinue");
-      const tutorialBack = document.getElementById("tutorialBack");
-      const modePicker = document.getElementById("modePicker");
-      const secondaryActions = document.getElementById("modeSecondaryActions");
-
-      if (mobileLayout.matches) {
-        tutorialBack.before(tutorialContinue);
-        modePicker.after(secondaryActions);
-      } else {
-        tutorialBack.after(tutorialContinue);
-        modePicker.before(secondaryActions);
-      }
-
-      if (document.activeElement !== previousFocus) previousFocus?.focus({ preventScroll: true });
-    }
-
-    function navigateMobileStep(step) {
-      const button = mobileProgress.querySelector(`[data-step="${step}"]`);
-      if (!button || button.disabled) return;
-      if (button.hasAttribute("aria-current")) {
-        if (currentStep === 1.25 && !v1Locked) goToStep(1);
-        return;
-      }
-      if (step === 4 && currentStep === 3) {
-        proceedToComparison();
-        return;
-      }
-      if (currentStep === 3 && isWorkingDraftDirty) {
-        if (!window.confirm("Leave this step and discard the unsaved arrangement?")) return;
-        discardWorkingDraft();
-      }
-      if (currentStep === 2 && step === 3) {
-        finishReflection(true);
-        return;
-      }
-      if (currentStep === 2 && step === 4) {
-        secondReflection = {
-          text: document.getElementById("understandingShiftField").value.trim(),
-          inspiration: [...inspiration]
-        };
-        proceedToComparison();
-        return;
-      }
-      if (step === 1 && v1Locked) {
-        activeChoiceIdx = 0;
-        workingSquares = clone(choices[0].squares);
-        workingPhoto = choices[0].photo || "";
-        goToStep(1.25);
-        return;
-      }
-      goToStep(step);
-    }
-
-    function goToStep(stepNumber) {
-      if ((stepNumber >= 1.5 && !v1Locked) ||
-          (stepNumber === 1.25 && mode === "inperson" && !workingPhoto)) {
-        validateStep1Gate();
-        return;
-      }
-      currentStep = stepNumber;
-
-      [1, 2, 3, 4].forEach(n => {
-        const navItem = document.getElementById(`stepNav${n}`);
-        if (n === currentStep || (n === 1 && currentStep === 1.25)) {
-          navItem.setAttribute("aria-current", "step");
-        } else {
-          navItem.removeAttribute("aria-current");
-        }
-      });
-
-      const isGallery = currentStep === 1.5;
-      const galleryNav = document.getElementById("stepNavGallery");
-      if (isGallery) galleryNav.setAttribute("aria-current", "step");
-      else galleryNav.removeAttribute("aria-current");
-      document.getElementById("galleryPage").hidden = !isGallery;
-
-      document.getElementById("contextPanel").hidden = isGallery;
-      const inPerson = mode === "inperson";
-      const isCompare = currentStep === 4 && !inPerson && compareRequested && choices.length > 1;
-      const isSummary = currentStep === 4 && !isCompare;
-      const isCreation = currentStep === 1;
-      const onlineCreation = !inPerson && isCreation;
-      document.getElementById("stageSection").hidden = isGallery || isSummary;
-      document.getElementById("onlineCreatePanel").hidden = !onlineCreation;
-      document.getElementById("inPersonCreatePanel").hidden = !(inPerson && isCreation);
-      document.getElementById("onlineCreateHint").textContent =
-        `Arrange four squares to express ${selectedConcept}. Try changing one gap and see what that does to the arrangement.`;
-      document.getElementById("stepNav4").textContent = inPerson || choices.length < 2 || isSummary ? "4. Summary & Export" : "4. Compare & Export";
-      document.getElementById("finalReasonLabel").textContent = !isCompare
-        ? "Why did you keep this arrangement? (Optional)"
-        : "Why keep this version over the other saved choices?";
-      document.getElementById("finalReasonField").placeholder = !isCompare ? "" : "What helped you choose?";
-      document.getElementById("finishVariationsBtn").textContent = inPerson || choices.length < 2 ? "View Summary" : "Compare Versions";
-      document.getElementById("contextPanel").classList.toggle("summary-only", isSummary);
-      document.getElementById("workspaceShell").classList.toggle("reflection-screen", currentStep === 2 || currentStep === 1.25);
-      document.getElementById("stageSection").classList.toggle("wide", isCompare);
-      document.getElementById("canvasView").hidden = isCompare;
-      document.getElementById("compareView").hidden = !isCompare;
-
-      document.getElementById("step1Title").textContent = currentStep === 1.25 ? "Reflection 1" : "Make Your First Composition";
-      document.getElementById("panelStep1").hidden = currentStep !== 1.25;
-      document.getElementById("panelStep2").hidden = currentStep !== 2;
-      document.getElementById("panelStep3").hidden = currentStep !== 3;
-      document.getElementById("panelStep4").hidden = currentStep !== 4;
-
-      document.getElementById("ghostToolbar").hidden = currentStep < 2;
-      document.getElementById("choicesTray").hidden = currentStep !== 3;
-
-      syncPhotoWorkspace();
-      if (isGallery) renderGallery();
-      if (currentStep === 2) {
-        workingSquares = clone(choices[0].squares);
-        workingPhoto = choices[0].photo || "";
-        activeChoiceIdx = 0;
-        syncPhotoWorkspace();
-        document.getElementById("reflectionNext").hidden = true;
-        validateStep2Gate();
-        renderReflectionReference();
-      }
-      if (currentStep === 3) {
-        const shiftText = document.getElementById("understandingShiftField").value.trim();
-        document.getElementById("activeReflectionSummary").textContent =
-          shiftText || "No reflection recorded.";
-        renderChoicesList();
-      } else if (currentStep === 4) {
-        document.getElementById("decisionPanel").hidden = true;
-        document.getElementById("continueDecisionBtn").hidden = isCompare;
-        document.getElementById("selectedSummaryBadge").hidden = isCompare;
-        hideDecisionExport();
-        document.getElementById("journeyBefore").textContent = firstReflection?.text || "";
-        document.getElementById("journeyAfter").textContent = secondReflection?.text || "";
-        if (isCompare) renderCompareGallery();
-        else document.getElementById("selectedSummaryBadge").textContent =
-          `Kept: ${choices[keptChoiceIdx]?.title || "V1"}`;
-      }
-
-      updateDraftStatusUI();
-      renderBoard();
-      const heading = document.getElementById(isGallery ? "galleryTitle"
-        : isCreation ? (onlineCreation ? "onlineCreateTitle" : "inPersonCreateTitle")
-        : currentStep === 1.25 ? "step1Title" : `step${currentStep}Title`);
-      heading.tabIndex = -1;
-      updateMobileSteps();
-      if (mobileLayout.matches) {
-        heading.focus({ preventScroll: true });
-        window.scrollTo(0, 0);
-        revealMobileStep();
-      } else {
-        heading.focus();
-      }
-    }
-
-    function proceedToComparison() {
-      if (isWorkingDraftDirty) {
-        const confirmSave = window.confirm(
-          "You have unsaved changes on the board (Working Draft). Save them as a new version before continuing?"
-        );
-        if (confirmSave) {
-          storeNewChoice();
-        } else {
-          discardWorkingDraft();
-        }
-      }
-      compareRequested = mode === "online" && choices.length > 1;
-      goToStep(4);
-      persistSessionState();
-    }
-
-    function updateDraftStatusUI() {
-      const baseChoice = choices[activeChoiceIdx];
-      isWorkingDraftDirty = Boolean(baseChoice && (
-        workingPhoto !== (baseChoice.photo || "") ||
-        (!workingPhoto && !squaresEqual(workingSquares, baseChoice.squares))
-      ));
-
-      const pending = v1Locked && isWorkingDraftDirty;
-      const saveButton = document.getElementById("saveNewVersionBtn");
-      saveButton.disabled = !pending;
-      if (currentStep === 3) {
-        document.getElementById("finishVariationsBtn").textContent =
-          mode === "online" && choices.length > 1 ? "Compare Versions" : "View Summary";
-      }
-      document.getElementById("discardDraftBtn").hidden = !pending;
-      document.getElementById("versionSaveStatus").textContent = pending ? "Unsaved changes" : "";
-    }
-
-    function discardWorkingDraft() {
-      workingSquares = clone(choices[activeChoiceIdx].squares);
-      workingPhoto = choices[activeChoiceIdx].photo || "";
-      syncPhotoWorkspace();
-      updateDraftStatusUI();
-      renderBoard();
-    }
-
-    function renderChoicesList() {
-      const list = document.getElementById("choicesList");
-      list.replaceChildren();
-
-      choices.forEach((ch, idx) => {
-        const li = document.createElement("li");
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.className = "choice-btn";
-        if (idx === activeChoiceIdx) btn.setAttribute("aria-current", "true");
-        btn.addEventListener("click", () => selectChoice(idx));
-
-        const titleStrong = document.createElement("strong");
-        titleStrong.textContent = ch.title;
-
-        btn.appendChild(titleStrong);
-        li.appendChild(btn);
-        list.appendChild(li);
-      });
-    }
-
-    function selectChoice(idx) {
-      if (isWorkingDraftDirty) {
-        const discard = window.confirm("Discard unsaved working draft changes and switch version?");
-        if (!discard) return;
-      }
-      activeChoiceIdx = idx;
-      workingSquares = clone(choices[idx].squares);
-      workingPhoto = choices[idx].photo || "";
-      syncPhotoWorkspace();
-      updateDraftStatusUI();
-      renderChoicesList();
-      renderBoard();
-    }
-
-    function storeNewChoice() {
-      if (!isWorkingDraftDirty) return;
-      const vNum = choices.length + 1;
-      const title = `V${vNum}`;
-      const shiftText = document.getElementById("understandingShiftField").value.trim();
-
-      choices.push({
-        title: title,
-        source: workingPhoto ? "Photo or PDF" : "Digital Canvas",
-        reflectionLink: shiftText || "Exploration",
-        note: "",
-        photo: workingPhoto,
-        immutable: false,
-        squares: clone(workingSquares)
-      });
-
-      activeChoiceIdx = choices.length - 1;
-      keptChoiceIdx = activeChoiceIdx;
-      isWorkingDraftDirty = false;
-      updateDraftStatusUI();
-      renderChoicesList();
-      updateMobileSteps();
-      const saved = persistSessionState();
-      document.getElementById("versionSaveStatus").textContent = saved ? `${title} saved` : `${title} added. Export to keep a copy.`;
-    }
-
-    function renderBoard() {
-      document.getElementById("board").classList.toggle("is-editable", canModifyBoard());
-      const container = document.getElementById("squaresContainer");
-      container.querySelectorAll(".square-ghost").forEach(el => el.remove());
-
-      const showGhost = document.getElementById("v1GhostToggle").checked && currentStep >= 2;
-      if (showGhost && choices.length > 0) {
-        choices[0].squares.forEach(sq => {
-          const ghost = document.createElement("div");
-          ghost.className = "square-ghost";
-          ghost.style.left = `${sq.x}%`;
-          ghost.style.top = `${sq.y}%`;
-          ghost.style.transform = `rotate(${sq.rot}deg)`;
-          ghost.textContent = "V1";
-          container.insertBefore(ghost, container.firstChild);
-        });
-      }
-
-      workingSquares.forEach(sq => {
-        let btn = squareButtonMap.get(sq.id);
-        if (!btn) {
-          btn = document.createElement("button");
-          btn.type = "button";
-          btn.className = "square-node";
-          btn.textContent = `#${sq.id}`;
-          btn.addEventListener("pointerdown", (e) => startPointerDrag(e, sq.id));
-          btn.addEventListener("lostpointercapture", (e) => finishPointerDrag(e, true));
-          btn.addEventListener("contextmenu", (e) => { if (canModifyBoard()) e.preventDefault(); });
-          btn.addEventListener("click", (e) => {
-            if (e.detail === 0 && canModifyBoard()) {
-              activeSquareId = sq.id;
-              renderBoard();
-            }
-          });
-          btn.addEventListener("keydown", (e) => handleSquareKeydown(e, sq.id));
-          squareButtonMap.set(sq.id, btn);
-          container.appendChild(btn);
-        }
-
-        btn.setAttribute(
-          "aria-label",
-          `Square ${sq.id}, X ${Math.round(sq.x)}%, Y ${Math.round(sq.y)}%, tilt ${sq.rot} degrees`
-        );
-        btn.tabIndex = canModifyBoard() ? 0 : -1;
-        btn.setAttribute("aria-pressed", String(sq.id === activeSquareId));
-        btn.style.left = `${sq.x}%`;
-        btn.style.top = `${sq.y}%`;
-        btn.style.transform = `rotate(${sq.rot}deg)`;
-      });
-
-      updateTiltToolbar();
-    }
-
-    function canModifyBoard() {
-      return (currentStep === 1 && !v1Locked) || (currentStep === 3 && !workingPhoto);
-    }
-
-    function startPointerDrag(e, id) {
-      if (!e.isPrimary || e.button !== 0 || squareGesture || !canModifyBoard()) return;
-      const square = workingSquares.find(s => s.id === id);
-      const { width, height } = document.getElementById("board").getBoundingClientRect();
-      if (!square || !width || !height) return;
-      e.preventDefault();
-      squareGesture = { id: e.pointerId, button: e.currentTarget, square, width, height, x: e.clientX, y: e.clientY, moved: false };
-      e.currentTarget.setPointerCapture(e.pointerId);
-    }
-
-    function gesturePosition(e, g) {
-      const dx = e.clientX - g.x, dy = e.clientY - g.y;
-      if (!g.moved && Math.hypot(dx, dy) <= 5) return null;
-      g.moved = true;
-      return {
-        x: Math.max(0, Math.min(83.5, Math.round(g.square.x + dx * 100 / g.width))),
-        y: Math.max(0, Math.min(83.5, Math.round(g.square.y + dy * 100 / g.height)))
-      };
-    }
-
-    window.addEventListener("pointermove", (e) => {
-      const g = squareGesture;
-      if (!g || e.pointerId !== g.id || !canModifyBoard()) return;
-      const pos = gesturePosition(e, g);
-      if (pos) {
-        g.button.style.left = pos.x + "%";
-        g.button.style.top = pos.y + "%";
-      }
-    });
-
-    function finishPointerDrag(e, canceled = false) {
-      const g = squareGesture;
-      if (!g || e.pointerId !== g.id) return;
-      squareGesture = null;
-      if (g.button.hasPointerCapture(g.id)) g.button.releasePointerCapture(g.id);
-      if (!canceled && canModifyBoard() && workingSquares.includes(g.square)) {
-        const pos = gesturePosition(e, g);
-        if (pos) {
-          Object.assign(g.square, pos);
-          updateDraftStatusUI();
-        }
-        activeSquareId = g.square.id;
-        if (e.pointerType === "mouse") g.button.focus({ preventScroll: true });
-      }
-      renderBoard();
-    }
-
-    window.addEventListener("pointerup", (e) => finishPointerDrag(e));
-    window.addEventListener("pointercancel", (e) => finishPointerDrag(e, true));
-
-    function handleSquareKeydown(e, id) {
-      const sq = workingSquares.find(s => s.id === id);
-      if (!sq) return;
-
-      if (!canModifyBoard()) return;
-
-      const step = e.shiftKey ? 5 : 2;
-      let handled = true;
-
-      if (e.key === "ArrowLeft") sq.x = Math.max(0, sq.x - step);
-      else if (e.key === "ArrowRight") sq.x = Math.min(83.5, sq.x + step);
-      else if (e.key === "ArrowUp") sq.y = Math.max(0, sq.y - step);
-      else if (e.key === "ArrowDown") sq.y = Math.min(83.5, sq.y + step);
-      else if (e.key === "r" || e.key === "R") sq.rot = ((sq.rot + 15 + 45) % 90) - 45;
-      else handled = false;
-
-      if (handled) {
-        e.preventDefault();
-        activeSquareId = id;
-        updateDraftStatusUI();
-        renderBoard();
-        squareButtonMap.get(id)?.focus();
-      }
-    }
-
-    function onBoardBackgroundTap(e) {
-      if (e.target.id === "board" || e.target.id === "squaresContainer") {
-        activeSquareId = null;
-        renderBoard();
-      }
-    }
-
-    function updateTiltToolbar() {
-      const bar = document.getElementById("tiltControl");
-      if (!activeSquareId || !canModifyBoard()) {
-        bar.hidden = true;
-        return;
-      }
-      const sq = workingSquares.find(s => s.id === activeSquareId);
-      bar.hidden = false;
-      document.getElementById("tiltReadout").value = `${sq.rot}°`;
-      bar.style.left = `${Math.max(18, Math.min(82, sq.x + 8))}%`;
-      bar.style.top = `${sq.y > 12 ? sq.y - 9 : sq.y + 19}%`;
-    }
-
-    function rotateActiveSquare(delta, event) {
-      if (!canModifyBoard()) return;
-      const sq = workingSquares.find(s => s.id === activeSquareId);
-      if (!sq) return;
-      sq.rot = Math.max(-45, Math.min(45, sq.rot + delta));
-      updateDraftStatusUI();
-      renderBoard();
-      if (event?.detail === 0) event.currentTarget.focus({ preventScroll: true });
-    }
-
-    function resetActiveTilt(event) {
-      if (!canModifyBoard()) return;
-      const sq = workingSquares.find(s => s.id === activeSquareId);
-      if (!sq) return;
-      sq.rot = 0;
-      updateDraftStatusUI();
-      renderBoard();
-      if (event?.detail === 0) event.currentTarget.focus({ preventScroll: true });
-    }
-
-    function renderCompareGallery() {
-      const grid = document.getElementById("compareGalleryGrid");
-      grid.replaceChildren();
-      document.getElementById("compareCountBadge").textContent = `Comparing ${choices.length} Saved Versions`;
-
-      const showOverlay = document.getElementById("galleryGhostToggle").checked;
-
-      choices.forEach((ch, idx) => {
-        const isKept = idx === keptChoiceIdx && !document.getElementById("decisionPanel").hidden;
-        const article = document.createElement("article");
-        article.className = `compare-item ${isKept ? "is-selected" : ""}`;
-
-        const head = document.createElement("header");
-        head.className = "compare-item-head";
-        const strong = document.createElement("strong");
-        strong.textContent = ch.title;
-        const badge = document.createElement("span");
-        badge.className = "badge";
-        badge.textContent = ch.source;
-        head.appendChild(strong);
-        head.appendChild(badge);
-
-        const miniBoard = document.createElement("div");
-        miniBoard.className = "canvas-frame";
-        miniBoard.setAttribute("aria-label", `${ch.title} preview`);
-
-        if (showOverlay && idx > 0 && !ch.photo && !choices[0].photo) {
-          choices[0].squares.forEach(sq => {
-            const g = document.createElement("div");
-            g.className = "square-ghost";
-            g.style.left = `${sq.x}%`;
-            g.style.top = `${sq.y}%`;
-            g.style.transform = `rotate(${sq.rot}deg)`;
-            g.textContent = "V1";
-            miniBoard.appendChild(g);
-          });
-        }
-
-        if (ch.photo) miniBoard.append(photoPreview(ch.photo));
-        else ch.squares.forEach(sq => {
-          const s = document.createElement("div");
-          s.className = "square-node";
-          s.style.left = `${sq.x}%`;
-          s.style.top = `${sq.y}%`;
-          s.style.transform = `rotate(${sq.rot}deg)`;
-          s.style.cursor = "default";
-          s.textContent = `#${sq.id}`;
-          miniBoard.appendChild(s);
-        });
-
-        const reflectMeta = document.createElement("p");
-        reflectMeta.className = "meta-note";
-        reflectMeta.textContent = `Reflection link: ${ch.reflectionLink || "Baseline"}`;
-
-        const noteLabel = document.createElement("label");
-        noteLabel.className = "sr-only";
-        noteLabel.setAttribute("for", `noteInput_${idx}`);
-        noteLabel.textContent = `Note for ${ch.title}`;
-
-        const noteInput = document.createElement("input");
-        noteInput.type = "text";
-        noteInput.id = `noteInput_${idx}`;
-        noteInput.value = ch.note || "";
-        noteInput.placeholder = "Observation on this version...";
-        noteInput.addEventListener("input", (e) => {
-          choices[idx].note = e.target.value;
-          persistSessionState();
-        });
-
-        const keepBtn = document.createElement("button");
-        keepBtn.type = "button";
-        keepBtn.className = `btn ${isKept ? "btn-primary" : ""}`;
-        keepBtn.setAttribute("aria-pressed", String(isKept));
-        keepBtn.textContent = isKept ? "Kept Version" : "Select to Keep";
-        keepBtn.addEventListener("click", () => {
-          keptChoiceIdx = idx;
-          showDecision();
-          renderCompareGallery();
-          persistSessionState();
-        });
-
-        article.appendChild(head);
-        article.appendChild(miniBoard);
-        article.appendChild(reflectMeta);
-        const noteDetails = document.createElement("details");
-        const noteSummary = document.createElement("summary");
-        noteSummary.textContent = "Version note";
-        noteDetails.append(noteSummary, noteLabel, noteInput);
-        article.append(noteDetails, keepBtn);
-        grid.appendChild(article);
-      });
-
-      const kept = choices[keptChoiceIdx];
-      if (kept) {
-        document.getElementById("selectedSummaryBadge").textContent =
-          `Kept: ${kept.title} (${kept.source})`;
-      }
-    }
-
-    function buildSessionPayload() {
-      const kept = choices[keptChoiceIdx];
-      return {
-        timestamp: new Date().toISOString(),
-        participationMode: mode,
-        currentStep,
-        markedSample,
-        compareRequested,
-        concept: selectedConcept,
-        firstReflection,
-        secondReflection,
-        galleryPostId,
-        inspirationIds: [...inspiration],
-        keptChoiceIdx,
-        reflectionDraft: document.getElementById("understandingShiftField").value.trim(),
-        inspiringWorks: galleryPosts().filter(post => inspiration.has(post.id)),
-        initialGoal: document.getElementById("goalField").value.trim(),
-        plannedNextBeforeFeedback: document.getElementById("nextField").value.trim(),
-        understandingShiftExplanation: document.getElementById("understandingShiftField").value.trim(),
-        finalKeptVersion: kept ? kept.title : "None",
-        finalDecisionRationale: document.getElementById("finalReasonField").value.trim(),
-        versionsHistory: choices
-      };
-    }
-
-    function persistSessionState() {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSessionPayload()));
-        return true;
-      } catch {
-        return false;
-      }
-    }
-
-    function saveReflectionDraft() {
-      document.getElementById("draftStatus").textContent = persistSessionState()
-        ? "Draft saved in this browser."
-        : "Browser storage unavailable or full. Export a session copy from the final step.";
-    }
-
-    function readDraft() {
-      try {
-        const draft = JSON.parse(localStorage.getItem(STORAGE_KEY));
-        return draft?.firstReflection && draft.versionsHistory?.length ? draft : null;
-      } catch {
-        return null;
-      }
-    }
-
-    function refreshResumeButton() {
-      document.getElementById("resumeDraftBtn").hidden = !readDraft();
-    }
-
-    function resumeDraft() {
-      const draft = readDraft();
-      if (!draft) return;
-      selectedConcept = draft.concept;
-      chooseConcept({ textContent: selectedConcept });
-      closeTutorial();
-      launchApp(draft.participationMode);
-      choices = draft.versionsHistory;
-      firstReflection = draft.firstReflection;
-      secondReflection = draft.secondReflection;
-      markedSample = draft.markedSample ?? null;
-      compareRequested = Boolean(draft.compareRequested);
-      galleryPostId = draft.galleryPostId;
-      (draft.inspirationIds || []).forEach(id => inspiration.add(id));
-      workingSquares = clone(choices[0].squares);
-      workingPhoto = choices[0].photo || "";
-      keptChoiceIdx = draft.keptChoiceIdx ?? 0;
-      v1Locked = true;
-      const fields = {
-        goalField: firstReflection.text, nextField: firstReflection.next,
-        understandingShiftField: draft.reflectionDraft,
-        finalReasonField: draft.finalDecisionRationale
-      };
-      Object.entries(fields).forEach(([id, value]) => {
-        document.getElementById(id).value = value || "";
-      });
-      ["goalField", "nextField"].forEach(id => { document.getElementById(id).readOnly = true; });
-      document.getElementById("v1LockBadge").textContent = "Locked";
-      document.getElementById("lockV1Btn").textContent = "Open Gallery";
-      validateStep2Gate();
-      const resumeStep = secondReflection && draft.currentStep === 3 ? 3
-        : secondReflection && secondReflection.text === draft.reflectionDraft ? 4
-        : draft.reflectionDraft ? 2 : 1.5;
-      goToStep(resumeStep);
-    }
-
-    function resetSessionStorage() {
-      document.querySelector(".session-actions").open = false;
-      try { localStorage.removeItem(STORAGE_KEY); } catch {}
-      startBlankSession();
-    }
-
-    function hideDecisionExport() {
-      document.getElementById("decisionExport").hidden = true;
-    }
-
-    function showDecision() {
-      document.getElementById("continueDecisionBtn").hidden = true;
-      document.getElementById("selectedSummaryBadge").hidden = false;
-      document.getElementById("decisionPanel").hidden = false;
-      hideDecisionExport();
-      document.getElementById("finalReasonLabel").focus();
-    }
-
-    function recordDecisionLog() {
-      const saved = persistSessionState();
-      const payload = buildSessionPayload();
-      const output = document.getElementById("finalLogOutput");
-      output.replaceChildren();
-      document.getElementById("decisionExport").hidden = false;
-
-      const heading = document.createElement("strong");
-      heading.textContent = saved ? "Decision saved in this browser." : "Decision ready to export. Browser storage is unavailable or full.";
-      output.appendChild(heading);
-
-      const metaLine = document.createElement("div");
-      metaLine.textContent = `Kept: ${payload.finalKeptVersion}`;
-      output.appendChild(metaLine);
-
-      const shiftLine = document.createElement("div");
-      shiftLine.textContent = `Understanding Shift (${payload.reflectionAlignmentTag}): ${payload.understandingShiftExplanation}`;
-      output.appendChild(shiftLine);
-
-      payload.versionsHistory.forEach((c, idx) => {
-        const row = document.createElement("div");
-        row.className = "log-item";
-        row.textContent = `${c.title} [${idx === keptChoiceIdx ? "KEPT" : "EXPLORED"}] (${c.source}) — ${c.note || "No note"}`;
-        output.appendChild(row);
-      });
-
-      const reasonLine = document.createElement("div");
-      reasonLine.textContent = `Final Rationale: ${payload.finalDecisionRationale || "None recorded"}`;
-      output.appendChild(reasonLine);
-      output.focus();
-    }
-
-    function exportSessionJSON() {
-      const payload = buildSessionPayload();
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
-      triggerFileDownload(blob, `4squares-session-${mode}.json`);
-    }
-
-    function downloadSessionSummaryTxt() {
-      const p = buildSessionPayload();
-      const lines = [
-        "4SQUARES WORKSPACE — SESSION SUMMARY",
-        `Timestamp: ${p.timestamp}`,
-        `Mode: ${p.participationMode}`,
-        `Concept: ${p.concept}`,
-        `Reflection 1: ${p.firstReflection?.text || ""}`,
-        `Reflection 2: ${p.secondReflection?.text || ""}`,
-        "",
-        "1. INITIAL FRAMING (V1 BASELINE)",
-        `Intended Meaning: ${p.initialGoal}`,
-        `Planned Next Step: ${p.plannedNextBeforeFeedback}`,
-        "",
-        "2. GALLERY & REFLECTION",
-        `Understanding Shift: ${p.understandingShiftExplanation}`,
-        "",
-        "3. SAVED VERSIONS TRAJECTORY",
-        ...p.versionsHistory.map((v, i) =>
-          `- ${v.title} [${i === keptChoiceIdx ? "KEPT" : "EXPLORED"}] (Source: ${v.source})\n  Note: ${v.note}\n  Squares: ${JSON.stringify(v.squares)}`
-        ),
-        "",
-        "4. FINAL DECISION",
-        `Kept Version: ${p.finalKeptVersion}`,
-        `Decision Rationale: ${p.finalDecisionRationale}`
-      ];
-      const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
-      triggerFileDownload(blob, `4squares-summary-${mode}.txt`);
-    }
-
-    function triggerFileDownload(blob, filename) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
-    orderWalkthroughControls();
-    refreshResumeButton();
-  </script>
+  <script type="module" src="./assets/workspace.js"></script>
 </body>
 </html>

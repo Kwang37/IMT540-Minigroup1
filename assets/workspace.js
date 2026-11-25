@@ -1,0 +1,1805 @@
+const isP3 = document.body.dataset.flow === "p3";
+    const STORAGE_KEY = isP3 ? "FOUR_SQUARES_P3_SESSION_STATE" : "FOUR_SQUARES_SESSION_STATE_V3";
+    const usesExploration = () => isP3 && mode === "online";
+    const participantOptions = ["modeHeading", "modePicker", "changeConcept", "reviewTutorial"];
+    const EXPLORATION_COUNT = 6;
+    const DEFAULT_SQUARE_SIZE = 16.5;
+    const MIN_SQUARE_SIZE = 8.5;
+    const MAX_SQUARE_SIZE = 36.5;
+    const SQUARE_SIZE_STEP = 4;
+
+    let explorations = [];
+    let reviewedArrangement = null;
+
+    let mode = "inperson";
+    let currentStep = 1;
+    let v1Locked = false;
+    let isWorkingDraftDirty = false;
+    let choices = [];
+    let activeChoiceIdx = 0;
+    let keptChoiceIdx = 0;
+    let workingSquares = [];
+    let activeSquareId = null;
+    let squareGesture = null;
+    const resizeCornerAngles = { nw: -135, ne: -45, se: 45, sw: 135 };
+
+    let firstReflection = null;
+    let secondReflection = null;
+    let workingPhoto = "";
+    let photoRequest = 0;
+    let galleryPostId = null;
+    const inspiration = new Set();
+    const gallery = new Map();
+    const galleryKey = "4SQUARES_GALLERY_V1";
+    const commentTypes = ["I Notice", "I Wonder", "What If"];
+    const concepts = ["Tension", "Balance", "Chaos", "Order"];
+    const photoPattern = /^data:image\/jpeg;base64,[A-Za-z0-9+/=]+$/;
+
+    function galleryPosts() {
+      return [...gallery.values()].filter(post => post.concept === selectedConcept);
+    }
+
+    const pdfPattern = /^data:application\/pdf;base64,[A-Za-z0-9+/=]+$/;
+    const maxPdfBytes = 1_000_000;
+
+    function photoPreview(src) {
+      if (pdfPattern.test(src)) {
+        const preview = document.createElement("div");
+        const frame = document.createElement("iframe");
+        frame.title = "Four-square composition PDF";
+        frame.style.cssText = "display:block;width:100%;height:clamp(14rem,55vh,32rem);border:0";
+        frame.src = src;
+        preview.append(frame);
+        return preview;
+      }
+      const image = document.createElement("img");
+      image.className = "composition-photo";
+      image.alt = "Photograph of a four-square composition";
+      image.src = src;
+      return image;
+    }
+
+    function useDigitalCanvas() {
+      if (mode !== "inperson" || currentStep !== 3) return;
+      photoRequest++;
+      workingPhoto = "";
+      document.getElementById("photoStatus").textContent = "";
+      syncPhotoWorkspace();
+      updateDraftStatusUI();
+      renderBoard();
+      squareButtonMap.values().next().value?.focus();
+    }
+
+    function syncPhotoWorkspace() {
+      const usePhoto = mode === "inperson";
+      const back = document.getElementById("backToComposition");
+      back.hidden = v1Locked;
+      back.textContent = usesExploration() ? "Back to Arrangements" : "Back to Composition";
+      document.getElementById("nextExploration").hidden = usePhoto || currentStep === 1.25;
+      document.getElementById("reflectionIntro").hidden = usePhoto;
+      document.getElementById("firstReflectionPrompt").textContent = usePhoto
+        ? "Why did you arrange the squares this way?"
+        : "What idea or feeling did you want to show? Describe one choice you made with the squares and why.";
+      document.getElementById("createInstruction").textContent =
+        `Add your four-square arrangement for ${selectedConcept}.`;
+      document.getElementById("photoWorkspace").hidden = !usePhoto;
+      document.getElementById("variationInstruction").textContent = usePhoto
+        ? "Try a new arrangement on the canvas or add a photo or PDF. Save it as a new version."
+        : "Move or turn a square to try an idea from your reflection. Choose Save New Version to keep both arrangements.";
+      const showBoard = !usePhoto || (currentStep === 3 && !workingPhoto);
+      document.getElementById("board").hidden = !showBoard;
+      document.getElementById("useCanvasBtn").hidden = currentStep !== 3 || !workingPhoto;
+      document.getElementById("ghostToolbar").hidden = usePhoto || currentStep !== 3;
+      document.getElementById("galleryGhostToggle").closest("label").hidden = usePhoto;
+      const canAddPhoto = usePhoto && ((currentStep === 1 && !v1Locked) || currentStep === 3);
+      document.getElementById("photoControls").hidden = !canAddPhoto;
+      for (const id of ["compositionCamera", "compositionUpload", "takePhotoBtn", "choosePhotoBtn"]) {
+        document.getElementById(id).disabled = !canAddPhoto;
+      }
+      const preview = document.getElementById("compositionPhoto");
+      preview.hidden = !workingPhoto;
+      if (preview.dataset.source !== workingPhoto) {
+        preview.replaceChildren();
+        if (workingPhoto) {
+          preview.append(photoPreview(workingPhoto));
+          if (pdfPattern.test(workingPhoto)) {
+            const link = document.createElement("a");
+            link.href = workingPhoto;
+            link.download = "composition.pdf";
+            link.textContent = "Download PDF";
+            preview.append(link);
+          }
+        }
+        preview.dataset.source = workingPhoto;
+      }
+    }
+
+    async function loadCompositionPhoto(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const request = ++photoRequest;
+      const status = document.getElementById("photoStatus");
+      const isPdf = file.type === "application/pdf" || /\.pdf$/i.test(file.name || "");
+      status.textContent = isPdf ? "Reading PDF…" : "Reading photo…";
+      try {
+        let source;
+        if (isPdf) {
+          if (file.size > maxPdfBytes) {
+            status.textContent = "Choose a PDF under 1 MB, or use a photo.";
+            return;
+          }
+          if (!(await file.slice(0, 5).text()).startsWith("%PDF-")) throw new Error("Invalid PDF");
+          source = await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve("data:application/pdf;base64," + reader.result.split(",")[1]);
+            reader.onerror = () => reject(reader.error);
+            reader.readAsDataURL(file);
+          });
+        } else {
+          const bitmap = await createImageBitmap(file);
+          const scale = Math.min(1, 960 / Math.max(bitmap.width, bitmap.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+          canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+          canvas.getContext("2d").drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+          bitmap.close();
+          source = canvas.toDataURL("image/jpeg", 0.78);
+        }
+        if (request !== photoRequest || input.disabled || mode !== "inperson" || document.getElementById("workspaceShell").hidden) return;
+        workingPhoto = source;
+        status.textContent = isPdf ? "PDF added." : "Photo added.";
+        syncPhotoWorkspace();
+        updateDraftStatusUI();
+        validateStep1Gate();
+      } catch {
+        if (request === photoRequest) status.textContent = isPdf ? "This PDF could not be opened." : "This image could not be opened. Try a JPEG or PNG.";
+      } finally {
+        if (request === photoRequest) input.value = "";
+      }
+    }
+
+    function cacheGallery(message) {
+      const status = document.getElementById("galleryStatus");
+      let stored = true;
+      try {
+        localStorage.setItem(galleryKey, JSON.stringify([...gallery.values()]));
+        status.textContent = message;
+      } catch {
+        stored = false;
+        status.textContent = message + " Export the gallery file to keep a copy.";
+      }
+      renderGallery();
+      return stored;
+    }
+
+    function publishToGallery() {
+      if (!firstReflection || galleryPostId) return;
+      const baseline = choices[0];
+      const interpretation = document.getElementById("galleryInterpretation").value.trim();
+      if (!interpretation) {
+        document.getElementById("galleryInterpretation").focus();
+        return;
+      }
+      galleryPostId = crypto.randomUUID();
+      gallery.set(galleryPostId, {
+        id: galleryPostId, concept: selectedConcept, interpretation,
+        photo: baseline.photo, squares: baseline.photo ? [] : clone(baseline.squares), comments: []
+      });
+      if (cacheGallery("Anonymous composition added.")) persistSessionState();
+    }
+
+    function readGalleryPosts(posts) {
+      if (!Array.isArray(posts) || posts.length > 100) throw new Error("Invalid gallery.");
+      return posts.map(post => {
+        if (!post || !/^[a-f0-9-]{36}$/.test(post.id) || !concepts.includes(post.concept)
+            || !Array.isArray(post.comments) || post.comments.length > 200) throw new Error("Invalid gallery.");
+        const photo = typeof post.photo === "string" && post.photo.length < 2_000_000 && (photoPattern.test(post.photo) || pdfPattern.test(post.photo)) ? post.photo : "";
+        if (!photo && (!Array.isArray(post.squares) || post.squares.length !== 4 ||
+            post.squares.some(sq => !sq || ![sq.x, sq.y, sq.rot].every(Number.isFinite)
+              || sq.x < -MAX_SQUARE_SIZE || sq.x > 100 || sq.y < -MAX_SQUARE_SIZE || sq.y > 100
+              || !Number.isFinite(squareSize(sq)) || squareSize(sq) < MIN_SQUARE_SIZE || squareSize(sq) > MAX_SQUARE_SIZE))) throw new Error("Invalid composition.");
+        const squares = photo ? [] : post.squares.map(sq => ({x: sq.x, y: sq.y, rot: sq.rot, size: squareSize(sq)}));
+        const comments = post.comments.filter(comment => comment && /^[a-f0-9-]{36}$/.test(comment.id)
+          && commentTypes.includes(comment.type) && typeof comment.text === "string" && comment.text.length <= 1000)
+          .map(({id, type, text}) => ({id, type, text}));
+        return { id: post.id, concept: post.concept, photo, squares, comments,
+          interpretation: typeof post.interpretation === "string" ? post.interpretation.slice(0, 1000) : "" };
+      });
+    }
+
+    function mergeGallery(posts) {
+      for (const post of posts) {
+        const existing = gallery.get(post.id);
+        if (!existing) gallery.set(post.id, post);
+        else {
+          const ids = new Set(existing.comments.map(comment => comment.id));
+          for (const comment of post.comments) {
+            if (!ids.has(comment.id)) {
+              existing.comments.push(comment);
+              ids.add(comment.id);
+            }
+          }
+        }
+      }
+    }
+
+    try {
+      mergeGallery(readGalleryPosts(JSON.parse(localStorage.getItem(galleryKey) || "[]")));
+    } catch {}
+
+    async function importGallery(input) {
+      const file = input.files[0];
+      if (!file) return;
+      try {
+        if (file.size > 20_000_000) throw new Error("Gallery file is too large.");
+        const data = JSON.parse(await file.text());
+        if (data.format !== "4squares-gallery-v1") throw new Error("Invalid gallery format.");
+        mergeGallery(readGalleryPosts(data.posts));
+        cacheGallery("Gallery imported. Works appear under their original concept.");
+      } catch {
+        document.getElementById("galleryStatus").textContent = "This file could not be imported as a 4SQUARES gallery.";
+      } finally {
+        input.value = "";
+      }
+    }
+
+    function exportGallery() {
+      const blob = new Blob([JSON.stringify({ format: "4squares-gallery-v1", posts: [...gallery.values()] })], { type: "application/json" });
+      triggerFileDownload(blob, "4squares-gallery.json");
+    }
+
+    const galleryExamples = {
+      Tension: [
+        ["Held Apart", [[13,25,0],[30,37,0],[19,53,0],[69,44,19]]],
+        ["Near Collision", [[18,30,-12],[36,41,18],[56,51,-16],[69,66,13]]],
+        ["On Edge", [[18,65,0],[38,65,0],[58,65,0],[57,28,43]]],
+        ["Squeezed", [[16, 41, 0], [34, 41, 0], [51, 41, 0], [67, 41, 0]]],
+        ["Standoff", [[15, 25, 0], [15, 57, 0], [69, 25, 0], [69, 57, 0]]],
+        ["Pulled Away", [[16, 43, 0], [35, 43, 0], [54, 43, 0], [72, 21, 28]]]
+      ],
+      Balance: [
+        ["Counterweight", [[18,26,0],[18,46,0],[18,66,0],[67,46,45]]],
+        ["Two Pairs", [[21,20,0],[40,20,0],[43,64,0],[62,64,0]]],
+        ["Balanced Around a Gap", [[42,14,0],[70,42,0],[42,70,0],[14,42,0]]],
+        ["Mirror Pairs", [[18, 25, -20], [18, 60, 20], [66, 25, 20], [66, 60, -20]]],
+        ["Quiet Center", [[26, 31, 0], [41, 31, 0], [41, 49, 0], [56, 49, 0]]],
+        ["Corner Weights", [[13, 13, 0], [69, 13, 0], [13, 69, 0], [69, 69, 0]]]
+      ],
+      Chaos: [
+        ["Scatter", [[13,19,-24],[67,12,31],[42,50,42],[21,70,-12]]],
+        ["Collision", [[30,29,19],[43,39,-38],[51,46,13],[41,58,52]]],
+        ["Broken Sequence", [[14,64,17],[32,20,36],[54,49,-27],[70,19,4]]],
+        ["Interrupted Grid", [[23, 23, 0], [59, 22, 24], [19, 66, -19], [48, 49, 43]]],
+        ["Uneven Drift", [[10, 29, -11], [28, 43, 36], [67, 47, -34], [52, 72, 14]]],
+        ["Crossing Paths", [[27, 21, 35], [54, 34, -30], [31, 53, -19], [62, 65, 39]]]
+      ],
+      Order: [
+        ["Grid", [[25,25,0],[58,25,0],[25,58,0],[58,58,0]]],
+        ["Even Interval", [[9,42,0],[31,42,0],[53,42,0],[75,42,0]]],
+        ["Measured Steps", [[13,14,0],[31,32,0],[49,50,0],[67,68,0]]],
+        ["Neat Column", [[42, 8, 0], [42, 30, 0], [42, 52, 0], [42, 74, 0]]],
+        ["Repeating Tilt", [[13, 25, 25], [39, 25, 25], [13, 59, 25], [39, 59, 25]]],
+        ["Right Angle", [[16, 22, 0], [16, 46, 0], [16, 70, 0], [40, 70, 0]]]
+      ]
+    };
+
+    const sampleReadings = {
+      Tension: [
+        "I read tension as pressure between a group and an outsider. I clustered three squares and kept one tilted across the gap.",
+        "Tension can feel like a collision that has not happened yet. I placed the squares close together at competing angles.",
+        "I wanted the feeling of something about to tip. One tilted square sits above a stable row.",
+        "The gaps shrink until the last two squares overlap. I wanted the row to feel compressed.",
+        "I placed two pairs across a wide gap. The empty middle feels like a space neither side will cross.",
+        "The tilted square breaks away from the row. I wanted the others to seem as if they were holding it back."
+      ],
+      Balance: [
+        "Balance can be uneven. The distance and tilt of the lone square counter the weight of the column.",
+        "I used two pairs and shifted them in opposite directions to spread the visual weight across the page.",
+        "I treated the empty center as a space the four squares could balance around.",
+        "I mirrored the angles on both sides so the rotation feels balanced.",
+        "I kept the arrangement close to the center and stepped the two pairs in opposite directions.",
+        "I gave each corner the same visual weight and left the middle open."
+      ],
+      Chaos: [
+        "I used uneven gaps and unrelated angles so the eye has several places to jump.",
+        "I wanted chaos to feel crowded. The squares collide from several directions and the edges compete for attention.",
+        "I started with a left-to-right sequence and broke it with abrupt jumps in height and rotation.",
+        "I used a familiar grid and then disrupted its positions and angles.",
+        "I left a large gap after the first pair and turned each square independently to break the rhythm.",
+        "The alternating positions and opposing angles make the eye zigzag through the frame."
+      ],
+      Order: [
+        "I used a repeated row and column spacing so each square has a predictable place.",
+        "For me, order is repetition. Equal intervals make the four squares read like a steady beat.",
+        "I repeated the same horizontal and vertical step. The diagonal has a predictable direction without a grid.",
+        "I aligned all four squares vertically and repeated the same gap.",
+        "The squares are tilted, but repeating the same angle and spacing makes them feel ordered.",
+        "Three squares trace a column and the last one turns the corner at the same interval."
+      ]
+    };
+
+    function createFlipCard(title, source, reading, layout, photo) {
+      const figure = document.createElement("figure");
+      figure.className = "clothesline-card";
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "flip-art";
+      const front = document.createElement("span");
+      front.className = "canvas-frame sample-art";
+      front.setAttribute("role", "img");
+      front.setAttribute("aria-label", photo ? "Physical composition photo" : layout.map(([x,y,rot,size = DEFAULT_SQUARE_SIZE], i) =>
+        `Square ${i + 1} at ${Math.round(x)}% across and ${Math.round(y)}% down, rotated ${rot} degrees, side ${size}% of the board`).join(". "));
+      if (pdfPattern.test(photo || "")) front.textContent = "PDF composition";
+      else if (photo) front.append(photoPreview(photo));
+      else for (const [x, y, rot, size] of layout) {
+        const tile = document.createElement("span");
+        tile.className = "sample-square";
+        placeSquare(tile, {x, y, rot, size});
+        front.append(tile);
+      }
+      const back = document.createElement("span");
+      back.className = "art-back";
+      back.hidden = true;
+      const heading = document.createElement("strong");
+      heading.textContent = "Creator’s Interpretation";
+      const explanation = document.createElement("span");
+      explanation.textContent = reading;
+      back.append(heading, explanation);
+      const hint = document.createElement("span");
+      hint.className = "flip-hint";
+      hint.setAttribute("aria-hidden", "true");
+      button.append(front, back, hint);
+      const updateSide = flipped => {
+        front.hidden = flipped;
+        back.hidden = !flipped;
+        hint.textContent = flipped ? "Back to composition" : "Flip to read interpretation";
+        button.setAttribute("aria-expanded", String(flipped));
+        button.setAttribute("aria-label", flipped ? `Show composition: ${title}` : `Read interpretation: ${title}`);
+        button.setAttribute("aria-description", flipped ? reading : front.getAttribute("aria-label"));
+      };
+      updateSide(false);
+      button.onclick = () => updateSide(back.hidden);
+      const caption = document.createElement("figcaption");
+      caption.className = "card-caption";
+      const name = document.createElement("strong");
+      name.textContent = title;
+      const label = document.createElement("small");
+      label.textContent = source;
+      caption.append(name, label);
+      figure.append(button, caption);
+      if (pdfPattern.test(photo || "")) {
+        const link = document.createElement("a");
+        link.href = photo;
+        link.download = "composition.pdf";
+        link.textContent = "Download composition PDF";
+        figure.append(link);
+      }
+      return figure;
+    }
+
+    function scrollSamples(direction) {
+      const grid = document.getElementById("gallerySamples");
+      const first = grid.children[0];
+      const second = grid.children[1];
+      if (!first || !second) return;
+      grid.scrollBy({
+        left: direction * (second.offsetLeft - first.offsetLeft),
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth"
+      });
+    }
+
+    let markedSample = null;
+    let compareRequested = false;
+
+    function gallerySampleCard(index) {
+      const [title, layout] = galleryExamples[selectedConcept][index];
+      return createFlipCard(title, "Sample / AI-generated", sampleReadings[selectedConcept][index], layout);
+    }
+
+    function renderReflectionReference() {
+      const details = document.getElementById("reflectionReference");
+      const container = document.getElementById("reflectionReferenceCard");
+      const hasSavedCard = mode === "online" && Boolean(galleryExamples[selectedConcept]?.[markedSample]);
+      details.hidden = !hasSavedCard;
+      details.open = hasSavedCard;
+      container.replaceChildren();
+      if (hasSavedCard) container.append(gallerySampleCard(markedSample));
+
+      document.getElementById("secondReflectionPrompt").textContent = hasSavedCard
+        ? "What’s one difference between your arrangement and the saved example?"
+        : "What did the Gallery help you notice?";
+    }
+
+    function renderGallerySamples() {
+      const grid = document.getElementById("gallerySamples");
+      grid.replaceChildren();
+      document.getElementById("galleryTitle").textContent = selectedConcept + " Gallery";
+      document.getElementById("sampleSaveHelp").hidden = mode !== "online";
+      const status = document.getElementById("sampleSaveStatus");
+      const examples = galleryExamples[selectedConcept] || [];
+      status.textContent = "";
+      const marks = [];
+      const updateMarks = () => marks.forEach((button, index) => {
+        const saved = index === markedSample;
+        button.setAttribute("aria-pressed", String(saved));
+        button.textContent = saved ? "Saved for Reflection ✓" : "Save for Reflection";
+      });
+      examples.forEach(([title], index) => {
+        const card = gallerySampleCard(index);
+        if (mode === "online") {
+          const mark = document.createElement("button");
+          mark.type = "button";
+          mark.className = "btn btn-sm sample-save";
+          marks.push(mark);
+          mark.onclick = () => {
+            const previousTitle = examples[markedSample]?.[0];
+            markedSample = markedSample === index ? null : index;
+            updateMarks();
+            if (markedSample === null) status.textContent = `Removed “${title}” from Reflection 2.`;
+            else if (previousTitle) status.textContent = `Saved “${title}” in place of “${previousTitle}”.`;
+            else status.textContent = `Saved “${title}” for Reflection 2.`;
+            persistSessionState();
+          };
+          card.append(mark);
+        }
+        grid.append(card);
+      });
+      updateMarks();
+      grid.scrollLeft = 0;
+    }
+
+    function showGalleryV1() {
+      const details = document.getElementById("galleryV1");
+      const preview = document.getElementById("galleryV1Preview");
+      const photo = choices[0]?.photo;
+      if (details.hidden || !details.open || !photo || preview.dataset.source === photo) return;
+      preview.replaceChildren(photoPreview(photo));
+      if (pdfPattern.test(photo)) {
+        const link = document.createElement("a");
+        link.href = photo;
+        link.download = "my-v1.pdf";
+        link.textContent = "Download my V1 PDF";
+        preview.append(link);
+      }
+      preview.dataset.source = photo;
+    }
+
+    function renderGallery() {
+      renderGallerySamples();
+      const myV1 = document.getElementById("galleryV1");
+      myV1.hidden = mode !== "inperson" || !choices[0]?.photo;
+      if (myV1.hidden) myV1.open = false;
+      document.getElementById("galleryV1Sharing").textContent = gallery.has(galleryPostId)
+        ? "You added this composition to the Gallery anonymously."
+        : "This is your own composition. It only appears in the Gallery if you choose Add V1 to Gallery.";
+      showGalleryV1();
+      const list = document.getElementById("galleryList");
+      list.replaceChildren();
+      document.querySelector('[data-click="publish-to-gallery"]').disabled = Boolean(galleryPostId);
+      const posts = galleryPosts();
+      document.getElementById("peerWorks").hidden = !posts.length;
+      posts.forEach((post, index) => {
+        const card = document.createElement("article");
+        card.className = "disclosure-block";
+        card.append(createFlipCard(
+          "Anonymous Composition " + (index + 1), "Peer Work",
+          post.interpretation || "The creator shared this work without a written interpretation.",
+          post.squares.map(sq => [sq.x, sq.y, sq.rot, squareSize(sq)]), post.photo
+        ));
+        const discussion = document.createElement("details");
+        const discussionLabel = document.createElement("summary");
+        discussionLabel.textContent = "Comments";
+        discussion.append(discussionLabel);
+        for (const comment of post.comments) {
+          const quote = document.createElement("blockquote");
+          quote.textContent = comment.type + " · " + comment.text;
+          discussion.append(quote);
+        }
+        const mark = document.createElement("button");
+        mark.type = "button";
+        mark.className = "btn";
+        mark.textContent = "This Made Me Rethink My Design";
+        mark.setAttribute("aria-pressed", inspiration.has(post.id));
+        mark.onclick = () => {
+          if (inspiration.has(post.id)) inspiration.delete(post.id);
+          else inspiration.add(post.id);
+          mark.setAttribute("aria-pressed", inspiration.has(post.id));
+          persistSessionState();
+        };
+        const form = document.createElement("form");
+        const typeLabel = document.createElement("label");
+        const type = document.createElement("select");
+        typeLabel.append("Comment starter", type);
+        commentTypes.forEach(label => type.add(new Option(label)));
+        const textLabel = document.createElement("label");
+        const field = document.createElement("textarea");
+        field.required = true;
+        field.maxLength = 1000;
+        textLabel.append("Anonymous comment", field);
+        const submit = document.createElement("button");
+        submit.className = "btn";
+        submit.textContent = "Post Comment";
+        form.append(typeLabel, textLabel, submit);
+        form.onsubmit = event => {
+          event.preventDefault();
+          const value = field.value.trim();
+          if (!value || post.comments.length >= 200) return;
+          post.comments.push({ id: crypto.randomUUID(), type: type.value, text: value });
+          cacheGallery("Comment added. Export the gallery file to share it.");
+          document.getElementById("galleryStatus").tabIndex = -1;
+          document.getElementById("galleryStatus").focus();
+        };
+        discussion.append(form);
+        card.append(mark, discussion);
+        list.append(card);
+      });
+    }
+
+    const squareButtonMap = new Map();
+
+    function clone(data) {
+      return JSON.parse(JSON.stringify(data));
+    }
+
+    function freezeV1Choice(choiceObj) {
+      const copy = clone(choiceObj);
+      copy.immutable = true;
+      copy.squares.forEach(sq => Object.freeze(sq));
+      Object.freeze(copy.squares);
+      return copy;
+    }
+
+    function squareSize(square) {
+      return square.size ?? DEFAULT_SQUARE_SIZE;
+    }
+
+    function placeSquare(element, square) {
+      element.style.left = square.x + "%";
+      element.style.top = square.y + "%";
+      element.style.width = squareSize(square) + "%";
+      element.style.height = squareSize(square) + "%";
+      element.style.transform = `rotate(${square.rot}deg)`;
+    }
+
+    function constrainSquarePosition(square, x, y) {
+      const size = squareSize(square);
+      // Allow cropping while leaving part of the square available to grab.
+      const visible = size / 4;
+      const clamp = value => Math.max(visible - size, Math.min(100 - visible, value));
+      return { x: clamp(x), y: clamp(y) };
+    }
+
+    function resizeSquare(square, direction) {
+      setSquareSize(square, squareSize(square) + direction * SQUARE_SIZE_STEP);
+    }
+
+    function setSquareSize(square, targetSize) {
+      const oldSize = squareSize(square);
+      const size = Math.max(MIN_SQUARE_SIZE, Math.min(MAX_SQUARE_SIZE, Math.round(targetSize * 10) / 10));
+      if (size === oldSize) return;
+      const shift = (oldSize - size) / 2;
+      square.size = size;
+      Object.assign(square, constrainSquarePosition(square, square.x + shift, square.y + shift));
+    }
+
+    function resizeActiveSquare(direction) {
+      if (!canModifyBoard()) return;
+      const square = workingSquares.find(s => s.id === activeSquareId);
+      if (!square) return;
+      resizeSquare(square, direction);
+      updateDraftStatusUI();
+      renderBoard();
+    }
+
+    function squaresEqual(a, b) {
+      if (!a || !b || a.length !== b.length) return false;
+      return a.every((s, i) => s.x === b[i].x && s.y === b[i].y && s.rot === b[i].rot && squareSize(s) === squareSize(b[i]));
+    }
+
+    let selectedConcept = "";
+
+    let tutorialFromWorkspace = false;
+    let tutorialStep = 0;
+    const tutorialPages = [
+      ["Express a concept", "Use exactly four squares to communicate the concept you chose. Start with one spatial choice: change the gaps, align the edges, overlap two squares, or rotate one. Think about how that choice changes the feeling."],
+      ["Create your first composition", "Drag a square to move it. With a keyboard, use Tab to focus a square, the arrow keys to move it, R to rotate it, and + or − to adjust its size."],
+      ["Record your own interpretation", "Before opening the Gallery, look back at your work and write why you placed the squares that way. The arrangement you reflect on becomes V1."],
+      ["Reflect after the Gallery", "Flip Gallery cards to see how others interpreted the same concept. Then record what changed or stayed the same in your understanding. You can finish with V1 or save a new version."]
+    ];
+
+    function showTutorialStep(index) {
+      tutorialStep = index;
+      const [title, body] = tutorialPages[index];
+      const heading = document.getElementById("tutorialTitle");
+      document.getElementById("tutorialProgress").textContent = `Tutorial ${index + 1} of ${tutorialPages.length}`;
+      heading.textContent = title;
+      const includePhoto = !isP3 && (mode === "inperson" || !tutorialFromWorkspace) && index === 1;
+      document.getElementById("tutorialBody").textContent = includePhoto
+        ? body + " For in-person work, arrange physical squares and add a photo or PDF."
+        : body;
+      document.getElementById("tutorialBack").hidden = index === 0;
+      document.getElementById("tutorialContinue").textContent = index === tutorialPages.length - 1
+        ? (tutorialFromWorkspace ? "Return to Workspace" : isP3 ? "Start Creating" : "Choose Participation Mode")
+        : "Continue";
+      heading.focus();
+    }
+
+    function advanceTutorial() {
+      if (tutorialStep === tutorialPages.length - 1) closeTutorial();
+      else showTutorialStep(tutorialStep + 1);
+    }
+
+    function openTutorial() {
+      const shell = document.getElementById("workspaceShell");
+      tutorialFromWorkspace = !shell.hidden;
+      shell.hidden = true;
+      document.getElementById("entryGate").hidden = false;
+      document.getElementById("resumeDraftBtn").hidden = true;
+      if (!isP3) participantOptions.forEach(id => { document.getElementById(id).hidden = true; });
+      document.getElementById("tutorial").hidden = false;
+      showTutorialStep(0);
+    }
+
+    function closeTutorial() {
+      document.getElementById("tutorial").hidden = true;
+      if (tutorialFromWorkspace) {
+        document.getElementById("entryGate").hidden = true;
+        document.getElementById("workspaceShell").hidden = false;
+        document.querySelector('#workspaceShell [data-click="open-tutorial"]').focus();
+      } else if (isP3) {
+        launchApp("online");
+      } else {
+        participantOptions.forEach(id => { document.getElementById(id).hidden = false; });
+        refreshResumeButton();
+        document.getElementById("modeHeading").focus();
+      }
+    }
+
+    function chooseConcept(button) {
+      selectedConcept = button.textContent.trim();
+      document.getElementById("conceptPicker").hidden = true;
+      if (!isP3) document.getElementById("modeHeading").textContent = selectedConcept + " — Choose how to participate";
+      openTutorial();
+    }
+
+    function showConceptPicker() {
+      document.getElementById("reviewTutorial").hidden = true;
+      document.getElementById("modePicker").hidden = true;
+      document.getElementById("modeHeading").hidden = true;
+      document.getElementById("changeConcept").hidden = true;
+      document.getElementById("conceptPicker").hidden = false;
+      const bubbles = [...document.querySelectorAll(".concept-bubble")];
+      (bubbles.find(button => button.textContent.trim() === selectedConcept) || bubbles[0]).focus();
+    }
+
+    function launchApp(selectedMode) {
+      document.getElementById("conceptIndicator").textContent = selectedConcept;
+      mode = selectedMode;
+      document.getElementById("entryGate").hidden = true;
+      document.getElementById("workspaceShell").hidden = false;
+
+      const isOnline = mode === "online";
+      const modeIndicator = document.getElementById("modeIndicator");
+      modeIndicator.hidden = isP3 && isOnline;
+      modeIndicator.textContent = isOnline ? "Online Solo Mode" : "In-Person Assist";
+      startBlankSession();
+
+    }
+
+    function startBlankSession() {
+      photoRequest++;
+      explorations = [];
+      reviewedArrangement = null;
+      firstReflection = null;
+      secondReflection = null;
+      workingPhoto = "";
+      galleryPostId = null;
+      inspiration.clear();
+      markedSample = null;
+      compareRequested = false;
+      document.getElementById("reflectionHelp").open = false;
+      document.getElementById("draftStatus").textContent = "";
+      document.getElementById("galleryStatus").textContent = "";
+      document.getElementById("galleryInterpretation").value = "";
+      activeSquareId = null;
+      document.getElementById("compositionUpload").value = "";
+      document.getElementById("compositionCamera").value = "";
+      document.getElementById("photoStatus").textContent = "";
+      v1Locked = false;
+      isWorkingDraftDirty = false;
+
+      const defaultGrid = [
+        { id: 1, x: 26, y: 26, rot: 0 },
+        { id: 2, x: 56, y: 26, rot: 0 },
+        { id: 3, x: 26, y: 56, rot: 0 },
+        { id: 4, x: 56, y: 56, rot: 0 }
+      ];
+
+      choices = [{
+        title: "V1: Baseline",
+        source: "Locked Baseline",
+        reflectionLink: "Initial baseline before the Gallery",
+        note: "Initial arrangement.",
+        immutable: false,
+        squares: clone(defaultGrid)
+      }];
+
+      activeChoiceIdx = 0;
+      keptChoiceIdx = 0;
+      workingSquares = clone(defaultGrid);
+
+      document.getElementById("goalField").value = "";
+      document.getElementById("goalField").readOnly = false;
+      if (isP3) document.getElementById("explorationReason").value = "";
+      document.getElementById("nextField").value = "";
+      document.getElementById("nextField").readOnly = false;
+      document.getElementById("understandingShiftField").value = "";
+      document.getElementById("finalReasonField").value = "";
+      document.getElementById("v1LockBadge").textContent = "In progress";
+      document.getElementById("lockV1Btn").textContent = "Save & Open Gallery";
+
+      document.getElementById("savedVersions").open = false;
+      document.getElementById("galleryV1").open = false;
+      const galleryV1Preview = document.getElementById("galleryV1Preview");
+      galleryV1Preview.replaceChildren();
+      delete galleryV1Preview.dataset.source;
+      hideDecisionExport();
+      document.getElementById("v1GhostToggle").checked = false;
+      validateStep1Gate();
+      goToStep(1);
+    }
+
+    function saveExploration() {
+      if (mode !== "online" || currentStep !== 1 || explorations.length >= EXPLORATION_COUNT) return;
+      const layoutKey = squares => squares.map(square =>
+        [square.x.toFixed(4), square.y.toFixed(4), ((square.rot % 90) + 90) % 90, squareSize(square)].join(",")).sort().join(";");
+      const key = layoutKey(workingSquares);
+      const status = document.getElementById("explorationStatus");
+      if (explorations.some(squares => layoutKey(squares) === key)) {
+        status.textContent = "You already saved this arrangement. Try moving or turning a square.";
+        status.hidden = false;
+        return;
+      }
+      explorations.push(clone(workingSquares));
+      activeSquareId = null;
+      goToStep(explorations.length === EXPLORATION_COUNT ? 1.1 : 1);
+      if (!persistSessionState() && currentStep === 1) {
+        status.textContent = "This arrangement is available in this tab. Browser storage is unavailable.";
+        status.hidden = false;
+      }
+    }
+
+    function explorationThumbnail(squares) {
+      const preview = document.createElement("span");
+      preview.className = "canvas-frame";
+      preview.setAttribute("aria-hidden", "true");
+      squares.forEach(square => {
+        const tile = document.createElement("span");
+        tile.className = "square-node";
+        placeSquare(tile, square);
+        preview.append(tile);
+      });
+      return preview;
+    }
+
+    function renderExplorationProgress() {
+      const count = explorations.length;
+      document.getElementById("explorationProgress").hidden = count === 0;
+      document.getElementById("explorationCount").textContent =
+        count + (count === 1 ? " arrangement saved" : " arrangements saved");
+      document.getElementById("explorationThumbnails").replaceChildren(...explorations.map((squares, index) => {
+        const item = document.createElement("li");
+        const caption = document.createElement("span");
+        caption.className = "meta-note";
+        caption.textContent = "Arrangement " + (index + 1);
+        item.append(explorationThumbnail(squares), caption);
+        return item;
+      }));
+    }
+
+    function renderExplorationReview() {
+      const list = document.getElementById("explorationList");
+      const reason = document.getElementById("explorationReason");
+      document.getElementById("explorationReviewPrompt").textContent =
+        `Compare your arrangements. Which one best shows ${selectedConcept.toLowerCase()}?`;
+      document.getElementById("explorationReasonLabel").textContent =
+        `Why did you choose this arrangement to show ${selectedConcept.toLowerCase()}? Point to a detail such as a gap, angle, or overlap.`;
+      reason.value = document.getElementById("goalField").value;
+      document.getElementById("explorationReasonGroup").hidden = reviewedArrangement === null;
+      list.replaceChildren();
+      explorations.forEach((squares, index) => {
+        const item = document.createElement("li");
+        const button = document.createElement("button");
+        const caption = document.createElement("span");
+        button.type = "button";
+        button.className = "btn exploration-option";
+        caption.textContent = "Arrangement " + (index + 1);
+        button.append(explorationThumbnail(squares), caption);
+        button.setAttribute("aria-pressed", String(index === reviewedArrangement));
+        button.addEventListener("click", () => {
+          if (reviewedArrangement !== index) document.getElementById("goalField").value = "";
+          reviewedArrangement = index;
+          workingSquares = clone(squares);
+          renderExplorationReview();
+          list.children[index].firstElementChild.focus({ preventScroll: true });
+          persistSessionState();
+        });
+        item.appendChild(button);
+        list.appendChild(item);
+      });
+      validateStep1Gate();
+    }
+
+    function saveExplorationReason() {
+      document.getElementById("goalField").value = document.getElementById("explorationReason").value;
+      validateStep1Gate();
+      persistSessionState();
+    }
+
+    function validateStep1Gate() {
+      document.getElementById("inPersonReflectBtn").disabled = !workingPhoto;
+      const hasGoal = document.getElementById("goalField").value.trim().length > 0;
+      document.getElementById("lockV1Btn").disabled = !hasGoal || (mode === "inperson" && !workingPhoto);
+      if (isP3) document.getElementById("explorationReflect").disabled = reviewedArrangement === null || !hasGoal;
+    }
+
+    function lockBaselineV1() {
+      if (!v1Locked) {
+        if (currentStep === 1.1
+          ? document.getElementById("explorationReflect").disabled
+          : document.getElementById("lockV1Btn").disabled) return;
+        firstReflection = {
+          text: document.getElementById("goalField").value.trim(),
+          next: document.getElementById("nextField").value.trim()
+        };
+        choices[0].photo = workingPhoto;
+        choices[0].squares = clone(workingSquares);
+        choices[0].title = "V1: Original";
+        choices[0] = freezeV1Choice(choices[0]);
+        v1Locked = true;
+        isWorkingDraftDirty = false;
+        document.getElementById("goalField").readOnly = true;
+        document.getElementById("nextField").readOnly = true;
+        document.getElementById("v1LockBadge").textContent = "Saved";
+        document.getElementById("lockV1Btn").textContent = "Open Gallery";
+      }
+      activeChoiceIdx = 0;
+      persistSessionState();
+      goToStep(1.5);
+    }
+
+    function validateStep2Gate() {
+      const hasResponse = Boolean(document.getElementById("understandingShiftField").value.trim());
+      if (!hasResponse) document.getElementById("reflectionNext").hidden = true;
+      const nextVisible = !document.getElementById("reflectionNext").hidden;
+      const continueButton = document.getElementById("continueReflectionBtn");
+      continueButton.disabled = !hasResponse;
+      continueButton.hidden = nextVisible;
+      updateMobileSteps();
+    }
+
+    function showReflectionNext() {
+      if (document.getElementById("continueReflectionBtn").disabled) return;
+      document.getElementById("reflectionNext").hidden = false;
+      validateStep2Gate();
+      document.getElementById("reflectionNextTitle").focus();
+    }
+
+    function finishReflection(redesign) {
+      const text = document.getElementById("understandingShiftField").value.trim();
+      if (!text) {
+        document.getElementById("understandingShiftField").focus();
+        return;
+      }
+      secondReflection = { text, inspiration: [...inspiration] };
+      compareRequested = false;
+      if (!redesign) keptChoiceIdx = 0;
+      goToStep(redesign ? 3 : 4);
+      persistSessionState();
+    }
+
+    const mobileLayout = window.matchMedia("(max-width: 767px)");
+    const mobileProgress = document.querySelector(".mobile-progress");
+    const mobileStepList = document.getElementById("mobileStepList");
+
+    function updateMobileSteps() {
+      const reflectionReady = !document.getElementById("reflectionNext").hidden;
+      const availableSteps = {
+        1: true,
+        1.5: v1Locked,
+        2: v1Locked,
+        3: currentStep === 2 ? reflectionReady : Boolean(secondReflection),
+        4: currentStep === 2 ? reflectionReady && Boolean(secondReflection) : Boolean(secondReflection)
+      };
+      const activeStep = currentStep === 1.1 || currentStep === 1.25 ? 1 : currentStep;
+      for (const button of mobileProgress.querySelectorAll("[data-step]")) {
+        const step = Number(button.dataset.step);
+        const active = step === activeStep;
+        button.disabled = !active && !availableSteps[step];
+        if (active) button.setAttribute("aria-current", "step");
+        else button.removeAttribute("aria-current");
+      }
+      const showsComparison = mode === "online" && choices.length > 1 &&
+        (currentStep !== 4 || compareRequested);
+      mobileProgress.querySelector('[data-step="4"]').textContent =
+        showsComparison ? "4. Compare & Export" : "4. Summary & Export";
+    }
+
+    function revealMobileStep() {
+      const active = mobileStepList.querySelector('[aria-current="step"]');
+      if (!mobileLayout.matches || !active) return;
+      const listBounds = mobileStepList.getBoundingClientRect();
+      const buttonBounds = active.getBoundingClientRect();
+      if (buttonBounds.left < listBounds.left || buttonBounds.right > listBounds.right) {
+        mobileStepList.scrollLeft += buttonBounds.left - listBounds.left -
+          (listBounds.width - buttonBounds.width) / 2;
+      }
+    }
+
+    mobileLayout.addEventListener("change", revealMobileStep);
+    mobileLayout.addEventListener("change", orderWalkthroughControls);
+
+    function orderWalkthroughControls() {
+      const previousFocus = document.activeElement;
+      const tutorialContinue = document.getElementById("tutorialContinue");
+      const tutorialBack = document.getElementById("tutorialBack");
+      if (mobileLayout.matches) tutorialBack.before(tutorialContinue);
+      else tutorialBack.after(tutorialContinue);
+      if (!isP3) {
+        const modePicker = document.getElementById("modePicker");
+        const secondaryActions = document.getElementById("modeSecondaryActions");
+        if (mobileLayout.matches) modePicker.after(secondaryActions);
+        else modePicker.before(secondaryActions);
+      }
+
+      if (document.activeElement !== previousFocus) previousFocus?.focus({ preventScroll: true });
+    }
+
+    function navigateMobileStep(step) {
+      const button = mobileProgress.querySelector(`[data-step="${step}"]`);
+      if (!button || button.disabled) return;
+      if (button.hasAttribute("aria-current")) {
+        if (currentStep === 1.25 && !v1Locked) goToStep(usesExploration() ? 1.1 : 1);
+        return;
+      }
+      if (step === 4 && currentStep === 3) {
+        proceedToComparison();
+        return;
+      }
+      if (currentStep === 3 && isWorkingDraftDirty) {
+        if (!window.confirm("Leave this step and discard the unsaved arrangement?")) return;
+        discardWorkingDraft();
+      }
+      if (currentStep === 2 && step === 3) {
+        finishReflection(true);
+        return;
+      }
+      if (currentStep === 2 && step === 4) {
+        secondReflection = {
+          text: document.getElementById("understandingShiftField").value.trim(),
+          inspiration: [...inspiration]
+        };
+        proceedToComparison();
+        return;
+      }
+      if (step === 1 && v1Locked) {
+        activeChoiceIdx = 0;
+        workingSquares = clone(choices[0].squares);
+        workingPhoto = choices[0].photo || "";
+        goToStep(1.25);
+        return;
+      }
+      goToStep(step);
+    }
+
+    function goToStep(stepNumber) {
+      if ((stepNumber >= 1.5 && !v1Locked) ||
+          (stepNumber === 1.25 && mode === "inperson" && !workingPhoto)) {
+        validateStep1Gate();
+        return;
+      }
+      if (usesExploration() && !v1Locked) {
+        if (stepNumber === 1 && explorations.length === EXPLORATION_COUNT) stepNumber = 1.1;
+        if (stepNumber === 1.1 && explorations.length < EXPLORATION_COUNT) return;
+        if (stepNumber === 1.25 && reviewedArrangement === null) return;
+      }
+      currentStep = stepNumber;
+
+      [1, 2, 3, 4].forEach(n => {
+        const navItem = document.getElementById(`stepNav${n}`);
+        if (n === currentStep || (n === 1 && (currentStep === 1.1 || currentStep === 1.25))) {
+          navItem.setAttribute("aria-current", "step");
+        } else {
+          navItem.removeAttribute("aria-current");
+        }
+      });
+
+      const isGallery = currentStep === 1.5;
+      const galleryNav = document.getElementById("stepNavGallery");
+      if (isGallery) galleryNav.setAttribute("aria-current", "step");
+      else galleryNav.removeAttribute("aria-current");
+      document.getElementById("galleryPage").hidden = !isGallery;
+
+      document.getElementById("contextPanel").hidden = isGallery;
+      const inPerson = mode === "inperson";
+      const isCompare = currentStep === 4 && !inPerson && compareRequested && choices.length > 1;
+      const isSummary = currentStep === 4 && !isCompare;
+      const isCreation = currentStep === 1;
+      const onlineCreation = !inPerson && isCreation;
+      const isReview = !inPerson && currentStep === 1.1;
+      document.getElementById("stageSection").hidden = isGallery || isSummary || isReview;
+      document.getElementById("contextPanel").classList.toggle("exploration-review-screen", isReview);
+      document.getElementById("onlineCreatePanel").hidden = !onlineCreation;
+      if (isP3) {
+        document.getElementById("explorationStatus").hidden = true;
+        if (onlineCreation) renderExplorationProgress();
+        document.getElementById("explorationReview").hidden = !isReview;
+        if (isReview) renderExplorationReview();
+      }
+      document.getElementById("onlineCreateTitle").textContent =
+        explorations.length ? "Try Another Arrangement" : "Make a Composition";
+      document.getElementById("inPersonCreatePanel").hidden = !(inPerson && isCreation);
+      document.getElementById("onlineCreateHint").textContent =
+        `Arrange four squares to express ${selectedConcept}. Try changing a gap or letting a square extend past the frame.`;
+      document.getElementById("stepNav4").textContent = inPerson || choices.length < 2 || isSummary ? "4. Summary & Export" : "4. Compare & Export";
+      document.getElementById("finalReasonLabel").textContent = !isCompare
+        ? "Why did you keep this arrangement? (Optional)"
+        : "Why keep this version over the other saved choices?";
+      document.getElementById("finalReasonField").placeholder = !isCompare ? "" : "What helped you choose?";
+      document.getElementById("finishVariationsBtn").textContent = inPerson || choices.length < 2 ? "View Summary" : "Compare Versions";
+      document.getElementById("contextPanel").classList.toggle("summary-only", isSummary);
+      document.getElementById("workspaceShell").classList.toggle("reflection-screen", currentStep === 2 || currentStep === 1.25);
+      document.getElementById("stageSection").classList.toggle("wide", isCompare);
+      document.getElementById("canvasView").hidden = isCompare;
+      document.getElementById("compareView").hidden = !isCompare;
+
+      document.getElementById("step1Title").textContent = currentStep === 1.25 ? "Reflection 1" : "Make Your First Composition";
+      document.getElementById("panelStep1").hidden = currentStep !== 1.25;
+      document.getElementById("panelStep2").hidden = currentStep !== 2;
+      document.getElementById("panelStep3").hidden = currentStep !== 3;
+      document.getElementById("panelStep4").hidden = currentStep !== 4;
+
+      document.getElementById("ghostToolbar").hidden = currentStep < 2;
+      document.getElementById("choicesTray").hidden = currentStep !== 3;
+
+      syncPhotoWorkspace();
+      if (isGallery) renderGallery();
+      if (currentStep === 2) {
+        workingSquares = clone(choices[0].squares);
+        workingPhoto = choices[0].photo || "";
+        activeChoiceIdx = 0;
+        syncPhotoWorkspace();
+        document.getElementById("reflectionNext").hidden = true;
+        validateStep2Gate();
+        renderReflectionReference();
+      }
+      if (currentStep === 3) {
+        const shiftText = document.getElementById("understandingShiftField").value.trim();
+        document.getElementById("activeReflectionSummary").textContent =
+          shiftText || "No reflection recorded.";
+        renderChoicesList();
+      } else if (currentStep === 4) {
+        document.getElementById("decisionPanel").hidden = true;
+        document.getElementById("continueDecisionBtn").hidden = isCompare;
+        document.getElementById("selectedSummaryBadge").hidden = isCompare;
+        hideDecisionExport();
+        document.getElementById("journeyBefore").textContent = firstReflection?.text || "";
+        document.getElementById("journeyAfter").textContent = secondReflection?.text || "";
+        if (isCompare) renderCompareGallery();
+        else document.getElementById("selectedSummaryBadge").textContent =
+          `Kept: ${choices[keptChoiceIdx]?.title || "V1"}`;
+      }
+
+      validateStep1Gate();
+      updateDraftStatusUI();
+      renderBoard();
+      const heading = document.getElementById(isGallery ? "galleryTitle"
+        : isCreation ? (onlineCreation ? "onlineCreateTitle" : "inPersonCreateTitle")
+        : isReview ? "explorationReviewTitle"
+        : currentStep === 1.25 ? "step1Title" : `step${currentStep}Title`);
+      heading.tabIndex = -1;
+      updateMobileSteps();
+      if (mobileLayout.matches) {
+        heading.focus({ preventScroll: true });
+        window.scrollTo(0, 0);
+        revealMobileStep();
+      } else {
+        heading.focus();
+      }
+    }
+
+    function proceedToComparison() {
+      if (isWorkingDraftDirty) {
+        const confirmSave = window.confirm(
+          "You have unsaved changes on the board (Working Draft). Save them as a new version before continuing?"
+        );
+        if (confirmSave) {
+          storeNewChoice();
+        } else {
+          discardWorkingDraft();
+        }
+      }
+      compareRequested = mode === "online" && choices.length > 1;
+      goToStep(4);
+      persistSessionState();
+    }
+
+    function updateDraftStatusUI() {
+      const baseChoice = choices[activeChoiceIdx];
+      isWorkingDraftDirty = Boolean(baseChoice && (
+        workingPhoto !== (baseChoice.photo || "") ||
+        (!workingPhoto && !squaresEqual(workingSquares, baseChoice.squares))
+      ));
+
+      const pending = v1Locked && isWorkingDraftDirty;
+      const saveButton = document.getElementById("saveNewVersionBtn");
+      saveButton.disabled = !pending;
+      if (currentStep === 3) {
+        document.getElementById("finishVariationsBtn").textContent =
+          mode === "online" && choices.length > 1 ? "Compare Versions" : "View Summary";
+      }
+      document.getElementById("discardDraftBtn").hidden = !pending;
+      document.getElementById("versionSaveStatus").textContent = pending ? "Unsaved changes" : "";
+    }
+
+    function discardWorkingDraft() {
+      workingSquares = clone(choices[activeChoiceIdx].squares);
+      workingPhoto = choices[activeChoiceIdx].photo || "";
+      syncPhotoWorkspace();
+      updateDraftStatusUI();
+      renderBoard();
+    }
+
+    function renderChoicesList() {
+      const list = document.getElementById("choicesList");
+      list.replaceChildren();
+
+      choices.forEach((ch, idx) => {
+        const li = document.createElement("li");
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "choice-btn";
+        if (idx === activeChoiceIdx) btn.setAttribute("aria-current", "true");
+        btn.addEventListener("click", () => selectChoice(idx));
+
+        const titleStrong = document.createElement("strong");
+        titleStrong.textContent = ch.title;
+
+        btn.appendChild(titleStrong);
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+
+    function selectChoice(idx) {
+      if (isWorkingDraftDirty) {
+        const discard = window.confirm("Discard unsaved working draft changes and switch version?");
+        if (!discard) return;
+      }
+      activeChoiceIdx = idx;
+      workingSquares = clone(choices[idx].squares);
+      workingPhoto = choices[idx].photo || "";
+      syncPhotoWorkspace();
+      updateDraftStatusUI();
+      renderChoicesList();
+      renderBoard();
+    }
+
+    function storeNewChoice() {
+      if (!isWorkingDraftDirty) return;
+      const vNum = choices.length + 1;
+      const title = `V${vNum}`;
+      const shiftText = document.getElementById("understandingShiftField").value.trim();
+
+      choices.push({
+        title: title,
+        source: workingPhoto ? "Photo or PDF" : "Digital Canvas",
+        reflectionLink: shiftText || "Exploration",
+        note: "",
+        photo: workingPhoto,
+        immutable: false,
+        squares: clone(workingSquares)
+      });
+
+      activeChoiceIdx = choices.length - 1;
+      keptChoiceIdx = activeChoiceIdx;
+      isWorkingDraftDirty = false;
+      updateDraftStatusUI();
+      renderChoicesList();
+      updateMobileSteps();
+      const saved = persistSessionState();
+      document.getElementById("versionSaveStatus").textContent = saved ? `${title} saved` : `${title} added. Export to keep a copy.`;
+    }
+
+    function renderBoard() {
+      document.getElementById("board").classList.toggle("is-editable", canModifyBoard());
+      const container = document.getElementById("squaresContainer");
+      container.querySelectorAll(".square-ghost").forEach(el => el.remove());
+
+      const showGhost = document.getElementById("v1GhostToggle").checked && currentStep >= 2;
+      if (showGhost && choices.length > 0) {
+        choices[0].squares.forEach(sq => {
+          const ghost = document.createElement("div");
+          ghost.className = "square-ghost";
+          placeSquare(ghost, sq);
+          ghost.textContent = "V1";
+          container.insertBefore(ghost, container.firstChild);
+        });
+      }
+
+      workingSquares.forEach(sq => {
+        let btn = squareButtonMap.get(sq.id);
+        if (!btn) {
+          btn = document.createElement("button");
+          btn.type = "button";
+          btn.className = "square-node";
+          btn.textContent = `#${sq.id}`;
+          for (const corner of Object.keys(resizeCornerAngles)) {
+            const handle = document.createElement("span");
+            handle.className = "square-resize-handle";
+            handle.dataset.corner = corner;
+            handle.setAttribute("aria-hidden", "true");
+            btn.append(handle);
+          }
+          btn.addEventListener("contextmenu", (e) => { if (canModifyBoard()) e.preventDefault(); });
+          btn.addEventListener("click", (e) => {
+            if (e.detail === 0 && canModifyBoard()) {
+              activeSquareId = sq.id;
+              renderBoard();
+            }
+          });
+          btn.addEventListener("keydown", (e) => handleSquareKeydown(e, sq.id));
+          squareButtonMap.set(sq.id, btn);
+          container.appendChild(btn);
+        }
+
+        btn.setAttribute(
+          "aria-label",
+          `Square ${sq.id}, X ${Math.round(sq.x)}%, Y ${Math.round(sq.y)}%, tilt ${sq.rot} degrees, side ${squareSize(sq)} percent of board`
+        );
+        btn.tabIndex = canModifyBoard() ? 0 : -1;
+        btn.setAttribute("aria-pressed", String(sq.id === activeSquareId));
+        placeSquare(btn, sq);
+      });
+
+      updateTiltToolbar();
+    }
+
+    function canModifyBoard() {
+      return (currentStep === 1 && !v1Locked) || (currentStep === 3 && !workingPhoto);
+    }
+
+    const gestureBoard = document.getElementById("board");
+
+    function pointerDistance(points) {
+      const [a, b] = points.values();
+      return Math.hypot(a.x - b.x, a.y - b.y);
+    }
+
+    gestureBoard.addEventListener("pointerdown", e => {
+      if (!canModifyBoard() || e.button !== 0) return;
+      const point = { x: e.clientX, y: e.clientY };
+      if (squareGesture) {
+        const gesture = squareGesture;
+        if (e.pointerType !== "touch" || gesture.pointerType !== "touch" || gesture.points.size !== 1) return;
+        e.preventDefault();
+        gesture.points.set(e.pointerId, point);
+        gesture.kind = "pinch";
+        gesture.pinchBase = clone(gesture.preview);
+        gesture.distance = Math.max(8, pointerDistance(gesture.points));
+        gesture.button.setPointerCapture(e.pointerId);
+        return;
+      }
+
+      const button = e.target.closest("button.square-node");
+      const square = workingSquares.find(sq => squareButtonMap.get(sq.id) === button);
+      if (!square || !gestureBoard.clientWidth || !gestureBoard.clientHeight) return;
+      const handle = e.pointerType === "touch" ? null : e.target.closest(".square-resize-handle");
+      const cornerAngle = handle ? resizeCornerAngles[handle.dataset.corner] : undefined;
+      e.preventDefault();
+      activeSquareId = square.id;
+      squareGesture = {
+        kind: cornerAngle === undefined ? "move" : "corner", cornerAngle,
+        pointerType: e.pointerType, square, button,
+        origin: point, points: new Map([[e.pointerId, point]]), preview: clone(square),
+        width: gestureBoard.clientWidth, height: gestureBoard.clientHeight, moved: false
+      };
+      button.setPointerCapture(e.pointerId);
+      renderBoard();
+    });
+
+    function updateSquareGesture(e) {
+      const g = squareGesture;
+      if (!g?.points.has(e.pointerId) || !canModifyBoard() || !workingSquares.includes(g.square)) return;
+      g.points.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const preview = clone(g.kind === "pinch" ? g.pinchBase : g.square);
+      if (g.kind === "pinch") {
+        setSquareSize(preview, squareSize(g.pinchBase) * pointerDistance(g.points) / g.distance);
+      } else {
+        const dx = e.clientX - g.origin.x, dy = e.clientY - g.origin.y;
+        if (!g.moved && Math.hypot(dx, dy) <= (g.kind === "corner" ? 1 : 5)) return;
+        g.moved = true;
+        if (g.kind === "corner") {
+          const diagonal = (g.square.rot + g.cornerAngle) * Math.PI / 180;
+          const projected = dx * 100 / g.width * Math.cos(diagonal) + dy * 100 / g.height * Math.sin(diagonal);
+          setSquareSize(preview, squareSize(g.square) + projected * Math.SQRT2);
+        } else {
+          Object.assign(preview, constrainSquarePosition(g.square, g.square.x + Math.round(dx * 100 / g.width),
+            g.square.y + Math.round(dy * 100 / g.height)));
+        }
+      }
+      g.preview = preview;
+      placeSquare(g.button, preview);
+      if (g.kind !== "move") document.getElementById("squareSizeReadout").value = squareSize(preview) + "%";
+    }
+
+    function finishSquareGesture(e, canceled = false) {
+      const g = squareGesture;
+      if (!g?.points.has(e.pointerId)) return;
+      if (!canceled && canModifyBoard() && workingSquares.includes(g.square)) {
+        updateSquareGesture(e);
+        Object.assign(g.square, g.preview);
+        updateDraftStatusUI();
+        if (g.pointerType === "mouse") g.button.focus({ preventScroll: true });
+      }
+      squareGesture = null;
+      for (const id of g.points.keys()) {
+        if (g.button.hasPointerCapture(id)) g.button.releasePointerCapture(id);
+      }
+      renderBoard();
+    }
+
+    window.addEventListener("pointermove", updateSquareGesture);
+    window.addEventListener("pointerup", e => finishSquareGesture(e));
+    window.addEventListener("pointercancel", e => finishSquareGesture(e, true));
+    gestureBoard.addEventListener("lostpointercapture", e => finishSquareGesture(e, true));
+
+    function handleSquareKeydown(e, id) {
+      const sq = workingSquares.find(s => s.id === id);
+      if (!sq) return;
+
+      if (!canModifyBoard() || e.ctrlKey || e.metaKey || e.altKey) return;
+
+      const step = e.shiftKey ? 5 : 2;
+      let handled = true;
+
+      if (e.key === "ArrowLeft") sq.x -= step;
+      else if (e.key === "ArrowRight") sq.x += step;
+      else if (e.key === "ArrowUp") sq.y -= step;
+      else if (e.key === "ArrowDown") sq.y += step;
+      else if (e.key === "+" || e.key === "=") resizeSquare(sq, 1);
+      else if (e.key === "-" || e.key === "_") resizeSquare(sq, -1);
+      else if (e.key === "r" || e.key === "R") sq.rot = ((sq.rot + 15 + 45) % 90) - 45;
+      else handled = false;
+
+      if (handled) {
+        e.preventDefault();
+        Object.assign(sq, constrainSquarePosition(sq, sq.x, sq.y));
+        activeSquareId = id;
+        updateDraftStatusUI();
+        renderBoard();
+        squareButtonMap.get(id)?.focus();
+      }
+    }
+
+    function onBoardBackgroundTap(e) {
+      if (e.target.id === "board" || e.target.id === "squaresContainer") {
+        activeSquareId = null;
+        renderBoard();
+      }
+    }
+
+    function updateTiltToolbar() {
+      const bar = document.getElementById("tiltControl");
+      const sizeControls = document.getElementById("squareSizeControls");
+      const sq = canModifyBoard() && workingSquares.find(s => s.id === activeSquareId);
+      bar.hidden = sizeControls.hidden = !sq;
+      if (!sq) return;
+      const size = squareSize(sq);
+      document.getElementById("squareSizeLabel").textContent = `Square ${sq.id} size`;
+      document.getElementById("squareSizeReadout").value = size + "%";
+      document.getElementById("shrinkSquare").setAttribute("aria-disabled", String(size <= MIN_SQUARE_SIZE));
+      document.getElementById("growSquare").setAttribute("aria-disabled", String(size >= MAX_SQUARE_SIZE));
+      document.getElementById("tiltReadout").value = `${sq.rot}°`;
+      bar.style.left = `${Math.max(18, Math.min(82, sq.x + size / 2))}%`;
+      bar.style.top = `${sq.y > 12 ? sq.y - 9 : sq.y + size + 3}%`;
+    }
+
+    function rotateActiveSquare(delta, event) {
+      if (!canModifyBoard()) return;
+      const sq = workingSquares.find(s => s.id === activeSquareId);
+      if (!sq) return;
+      sq.rot = Math.max(-45, Math.min(45, sq.rot + delta));
+      Object.assign(sq, constrainSquarePosition(sq, sq.x, sq.y));
+      updateDraftStatusUI();
+      renderBoard();
+      if (event?.detail === 0) event.currentTarget.focus({ preventScroll: true });
+    }
+
+    function resetActiveTilt(event) {
+      if (!canModifyBoard()) return;
+      const sq = workingSquares.find(s => s.id === activeSquareId);
+      if (!sq) return;
+      sq.rot = 0;
+      Object.assign(sq, constrainSquarePosition(sq, sq.x, sq.y));
+      updateDraftStatusUI();
+      renderBoard();
+      if (event?.detail === 0) event.currentTarget.focus({ preventScroll: true });
+    }
+
+    function renderCompareGallery() {
+      const grid = document.getElementById("compareGalleryGrid");
+      grid.replaceChildren();
+      document.getElementById("compareCountBadge").textContent = `Comparing ${choices.length} Saved Versions`;
+
+      const showOverlay = document.getElementById("galleryGhostToggle").checked;
+
+      choices.forEach((ch, idx) => {
+        const isKept = idx === keptChoiceIdx && !document.getElementById("decisionPanel").hidden;
+        const article = document.createElement("article");
+        article.className = `compare-item ${isKept ? "is-selected" : ""}`;
+
+        const head = document.createElement("header");
+        head.className = "compare-item-head";
+        const strong = document.createElement("strong");
+        strong.textContent = ch.title;
+        const badge = document.createElement("span");
+        badge.className = "badge";
+        badge.textContent = ch.source;
+        head.appendChild(strong);
+        head.appendChild(badge);
+
+        const miniBoard = document.createElement("div");
+        miniBoard.className = "canvas-frame";
+        miniBoard.setAttribute("aria-label", `${ch.title} preview`);
+
+        if (showOverlay && idx > 0 && !ch.photo && !choices[0].photo) {
+          choices[0].squares.forEach(sq => {
+            const g = document.createElement("div");
+            g.className = "square-ghost";
+            placeSquare(g, sq);
+            g.textContent = "V1";
+            miniBoard.appendChild(g);
+          });
+        }
+
+        if (ch.photo) miniBoard.append(photoPreview(ch.photo));
+        else ch.squares.forEach(sq => {
+          const s = document.createElement("div");
+          s.className = "square-node";
+          placeSquare(s, sq);
+          s.style.cursor = "default";
+          s.textContent = `#${sq.id}`;
+          miniBoard.appendChild(s);
+        });
+
+        const reflectMeta = document.createElement("p");
+        reflectMeta.className = "meta-note";
+        reflectMeta.textContent = `Reflection link: ${ch.reflectionLink || "Baseline"}`;
+
+        const noteLabel = document.createElement("label");
+        noteLabel.className = "sr-only";
+        noteLabel.setAttribute("for", `noteInput_${idx}`);
+        noteLabel.textContent = `Note for ${ch.title}`;
+
+        const noteInput = document.createElement("input");
+        noteInput.type = "text";
+        noteInput.id = `noteInput_${idx}`;
+        noteInput.value = ch.note || "";
+        noteInput.placeholder = "Observation on this version...";
+        noteInput.addEventListener("input", (e) => {
+          choices[idx].note = e.target.value;
+          persistSessionState();
+        });
+
+        const keepBtn = document.createElement("button");
+        keepBtn.type = "button";
+        keepBtn.className = `btn ${isKept ? "btn-primary" : ""}`;
+        keepBtn.setAttribute("aria-pressed", String(isKept));
+        keepBtn.textContent = isKept ? "Kept Version" : "Select to Keep";
+        keepBtn.addEventListener("click", () => {
+          keptChoiceIdx = idx;
+          showDecision();
+          renderCompareGallery();
+          persistSessionState();
+        });
+
+        article.appendChild(head);
+        article.appendChild(miniBoard);
+        article.appendChild(reflectMeta);
+        const noteDetails = document.createElement("details");
+        const noteSummary = document.createElement("summary");
+        noteSummary.textContent = "Version note";
+        noteDetails.append(noteSummary, noteLabel, noteInput);
+        article.append(noteDetails, keepBtn);
+        grid.appendChild(article);
+      });
+
+      const kept = choices[keptChoiceIdx];
+      if (kept) {
+        document.getElementById("selectedSummaryBadge").textContent =
+          `Kept: ${kept.title} (${kept.source})`;
+      }
+    }
+
+    function buildSessionPayload() {
+      const kept = choices[keptChoiceIdx];
+      return {
+        timestamp: new Date().toISOString(),
+        participationMode: mode,
+        currentStep,
+        explorations,
+        reviewedArrangement,
+        explorationDraft: mode === "online" && !v1Locked ? workingSquares : null,
+        markedSample,
+        compareRequested,
+        concept: selectedConcept,
+        firstReflection,
+        secondReflection,
+        galleryPostId,
+        inspirationIds: [...inspiration],
+        keptChoiceIdx,
+        reflectionDraft: document.getElementById("understandingShiftField").value.trim(),
+        inspiringWorks: galleryPosts().filter(post => inspiration.has(post.id)),
+        initialGoal: document.getElementById("goalField").value.trim(),
+        plannedNextBeforeFeedback: document.getElementById("nextField").value.trim(),
+        understandingShiftExplanation: document.getElementById("understandingShiftField").value.trim(),
+        finalKeptVersion: kept ? kept.title : "None",
+        finalDecisionRationale: document.getElementById("finalReasonField").value.trim(),
+        versionsHistory: choices
+      };
+    }
+
+    function persistSessionState() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSessionPayload()));
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    function saveReflectionDraft() {
+      document.getElementById("draftStatus").textContent = persistSessionState()
+        ? "Draft saved in this browser."
+        : "Browser storage unavailable or full. Export a session copy from the final step.";
+    }
+
+    function readDraft() {
+      try {
+        const draft = JSON.parse(localStorage.getItem(STORAGE_KEY));
+        if (!draft?.versionsHistory?.length) return null;
+        return draft.firstReflection || draft.explorations?.length ? draft : null;
+      } catch {
+        return null;
+      }
+    }
+
+    function refreshResumeButton() {
+      document.getElementById("resumeDraftBtn").hidden = !readDraft();
+    }
+
+    function resumeDraft() {
+      const draft = readDraft();
+      if (!draft) return;
+      selectedConcept = draft.concept;
+      document.getElementById("conceptPicker").hidden = true;
+      launchApp(draft.participationMode);
+      choices = draft.versionsHistory;
+      explorations = draft.explorations || [];
+      reviewedArrangement = draft.reviewedArrangement ?? null;
+      firstReflection = draft.firstReflection;
+      if (!firstReflection) {
+        workingSquares = clone(draft.explorationDraft || explorations[reviewedArrangement] || explorations.at(-1));
+        document.getElementById("goalField").value = draft.initialGoal || "";
+        goToStep(explorations.length === EXPLORATION_COUNT ? 1.1 : 1);
+        return;
+      }
+      secondReflection = draft.secondReflection;
+      markedSample = draft.markedSample ?? null;
+      compareRequested = Boolean(draft.compareRequested);
+      galleryPostId = draft.galleryPostId;
+      (draft.inspirationIds || []).forEach(id => inspiration.add(id));
+      workingSquares = clone(choices[0].squares);
+      workingPhoto = choices[0].photo || "";
+      keptChoiceIdx = draft.keptChoiceIdx ?? 0;
+      v1Locked = true;
+      const fields = {
+        goalField: firstReflection.text, nextField: firstReflection.next,
+        understandingShiftField: draft.reflectionDraft,
+        finalReasonField: draft.finalDecisionRationale
+      };
+      Object.entries(fields).forEach(([id, value]) => {
+        document.getElementById(id).value = value || "";
+      });
+      ["goalField", "nextField"].forEach(id => { document.getElementById(id).readOnly = true; });
+      document.getElementById("v1LockBadge").textContent = "Locked";
+      document.getElementById("lockV1Btn").textContent = "Open Gallery";
+      validateStep2Gate();
+      const resumeStep = secondReflection && draft.currentStep === 3 ? 3
+        : secondReflection && secondReflection.text === draft.reflectionDraft ? 4
+        : draft.reflectionDraft ? 2 : 1.5;
+      goToStep(resumeStep);
+    }
+
+    function resetSessionStorage() {
+      document.querySelector(".session-actions").open = false;
+      try { localStorage.removeItem(STORAGE_KEY); } catch {}
+      startBlankSession();
+    }
+
+    function hideDecisionExport() {
+      document.getElementById("decisionExport").hidden = true;
+    }
+
+    function showDecision() {
+      document.getElementById("continueDecisionBtn").hidden = true;
+      document.getElementById("selectedSummaryBadge").hidden = false;
+      document.getElementById("decisionPanel").hidden = false;
+      hideDecisionExport();
+      document.getElementById("finalReasonLabel").focus();
+    }
+
+    function recordDecisionLog() {
+      const saved = persistSessionState();
+      const payload = buildSessionPayload();
+      const output = document.getElementById("finalLogOutput");
+      output.replaceChildren();
+      document.getElementById("decisionExport").hidden = false;
+
+      const heading = document.createElement("strong");
+      heading.textContent = saved ? "Decision saved in this browser." : "Decision ready to export. Browser storage is unavailable or full.";
+      output.appendChild(heading);
+
+      const metaLine = document.createElement("div");
+      metaLine.textContent = `Kept: ${payload.finalKeptVersion}`;
+      output.appendChild(metaLine);
+
+      const shiftLine = document.createElement("div");
+      shiftLine.textContent = `Understanding Shift (${payload.reflectionAlignmentTag}): ${payload.understandingShiftExplanation}`;
+      output.appendChild(shiftLine);
+
+      payload.versionsHistory.forEach((c, idx) => {
+        const row = document.createElement("div");
+        row.className = "log-item";
+        row.textContent = `${c.title} [${idx === keptChoiceIdx ? "KEPT" : "EXPLORED"}] (${c.source}) — ${c.note || "No note"}`;
+        output.appendChild(row);
+      });
+
+      const reasonLine = document.createElement("div");
+      reasonLine.textContent = `Final Rationale: ${payload.finalDecisionRationale || "None recorded"}`;
+      output.appendChild(reasonLine);
+      output.focus();
+    }
+
+    function exportSessionJSON() {
+      const payload = buildSessionPayload();
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      triggerFileDownload(blob, `4squares-session-${mode}.json`);
+    }
+
+    function downloadSessionSummaryTxt() {
+      const p = buildSessionPayload();
+      const lines = [
+        "4SQUARES WORKSPACE — SESSION SUMMARY",
+        `Timestamp: ${p.timestamp}`,
+        `Mode: ${p.participationMode}`,
+        `Concept: ${p.concept}`,
+        `Reflection 1: ${p.firstReflection?.text || ""}`,
+        `Reflection 2: ${p.secondReflection?.text || ""}`,
+        "",
+        "1. INITIAL FRAMING (V1 BASELINE)",
+        `Intended Meaning: ${p.initialGoal}`,
+        `Planned Next Step: ${p.plannedNextBeforeFeedback}`,
+        "",
+        "2. GALLERY & REFLECTION",
+        `Understanding Shift: ${p.understandingShiftExplanation}`,
+        "",
+        "3. SAVED VERSIONS TRAJECTORY",
+        ...p.versionsHistory.map((v, i) =>
+          `- ${v.title} [${i === keptChoiceIdx ? "KEPT" : "EXPLORED"}] (Source: ${v.source})\n  Note: ${v.note}\n  Squares: ${JSON.stringify(v.squares)}`
+        ),
+        "",
+        "4. FINAL DECISION",
+        `Kept Version: ${p.finalKeptVersion}`,
+        `Decision Rationale: ${p.finalDecisionRationale}`
+      ];
+      const blob = new Blob([lines.join("\n")], { type: "text/plain;charset=utf-8" });
+      triggerFileDownload(blob, `4squares-summary-${mode}.txt`);
+    }
+
+    function triggerFileDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+    orderWalkthroughControls();
+    refreshResumeButton();
+
+  
+    const clickActions = {
+      "choose-concept": event => chooseConcept(event.currentTarget),
+      "resume-draft": () => resumeDraft(),
+      "show-tutorial-step": () => showTutorialStep(tutorialStep - 1),
+      "advance-tutorial": () => advanceTutorial(),
+      "close-tutorial": () => closeTutorial(),
+      "open-tutorial": () => openTutorial(),
+      "navigate-mobile-step": () => navigateMobileStep(1),
+      "navigate-mobile-step-2": () => navigateMobileStep(2),
+      "navigate-mobile-step-3": () => navigateMobileStep(3),
+      "navigate-mobile-step-4": () => navigateMobileStep(4),
+      "navigate-mobile-step-5": () => navigateMobileStep(1.5),
+      "reset-session-storage": () => resetSessionStorage(),
+      "go-to-step": () => goToStep(2),
+      "scroll-samples": () => scrollSamples(-1),
+      "scroll-samples-2": () => scrollSamples(1),
+      "publish-to-gallery": () => publishToGallery(),
+      "export-gallery": () => exportGallery(),
+      "select-choice": () => selectChoice(0),
+      "on-board-background-tap": event => onBoardBackgroundTap(event),
+      "rotate-active-square": event => rotateActiveSquare(-15, event),
+      "rotate-active-square-2": event => rotateActiveSquare(15, event),
+      "reset-active-tilt": event => resetActiveTilt(event),
+      "resize-active-square": () => resizeActiveSquare(-1),
+      "resize-active-square-2": () => resizeActiveSquare(1),
+      "use-digital-canvas": () => useDigitalCanvas(),
+      "document-get-element-by-id": () => document.getElementById('compositionCamera').click(),
+      "document-get-element-by-id-2": () => document.getElementById('compositionUpload').click(),
+      "store-new-choice": () => storeNewChoice(),
+      "discard-working-draft": () => discardWorkingDraft(),
+      "go-to-step-2": () => goToStep(3),
+      "save-exploration": () => saveExploration(),
+      "lock-baseline-v1": () => lockBaselineV1(),
+      "go-to-step-3": () => goToStep(1.25),
+      "go-to-step-4": () => goToStep(mode === 'online' ? 1.1 : 1),
+      "go-to-step-5": () => goToStep(1.5),
+      "show-reflection-next": () => showReflectionNext(),
+      "finish-reflection": () => finishReflection(false),
+      "finish-reflection-2": () => finishReflection(true),
+      "save-reflection-draft": () => saveReflectionDraft(),
+      "proceed-to-comparison": () => proceedToComparison(),
+      "show-decision": () => showDecision(),
+      "record-decision-log": () => recordDecisionLog(),
+      "export-session-json": () => exportSessionJSON(),
+      "download-session-summary-txt": () => downloadSessionSummaryTxt(),
+      "show-concept-picker": () => showConceptPicker(),
+      "launch-app": () => launchApp('online'),
+      "launch-app-2": () => launchApp('inperson'),
+      "go-to-step-6": () => goToStep(1),
+    };
+
+    const toggleActions = {
+      "show-gallery-v1": () => showGalleryV1(),
+    };
+
+    const changeActions = {
+      "import-gallery": event => importGallery(event.currentTarget),
+      "render-board": () => renderBoard(),
+      "load-composition-photo": event => loadCompositionPhoto(event.currentTarget),
+      "render-compare-gallery": () => renderCompareGallery(),
+    };
+
+    const pointerdownActions = {
+      "event-stop-propagation": event => event.stopPropagation(),
+    };
+
+    const inputActions = {
+      "save-exploration-reason": () => saveExplorationReason(),
+      "validate-step1-gate": () => validateStep1Gate(),
+      "validate-step2-gate": () => validateStep2Gate(),
+      "hide-decision-export": () => hideDecisionExport(),
+    };
+
+    for (const [event, actions] of Object.entries({
+      click: clickActions, change: changeActions, input: inputActions,
+      toggle: toggleActions, pointerdown: pointerdownActions
+    })) {
+      document.querySelectorAll(`[data-${event}]`).forEach(element => {
+        element.addEventListener(event, actions[element.getAttribute(`data-${event}`)]);
+      });
+    }
