@@ -731,7 +731,8 @@ const isP3 = document.body.dataset.flow === "p3";
     function setLocalSaveStatus(state, message) {
       const indicator = document.getElementById("localSaveStatus");
       indicator.dataset.state = state;
-      indicator.textContent = message;
+      indicator.querySelector(".save-status-full").textContent = message;
+      indicator.querySelector(".save-status-short").textContent = { saved: "Saved", idle: "Autosave", error: "Save failed" }[state];
     }
 
     function launchApp(selectedMode) {
