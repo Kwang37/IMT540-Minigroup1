@@ -1332,3 +1332,25 @@
 
 .glass-card.clothesline-card::before { background: #858da0; }
 .sample-grid .glass-card.clothesline-card::after { border-color: #b5bdca; }
+
+[data-flow="p3"] .gallery-heading { align-items: baseline; gap: 10px 20px; }
+[data-flow="p3"] .gallery-strip { margin: 0; }
+[data-flow="p3"] #galleryScrollHint {
+  display: flex;
+  justify-content: end;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px;
+  color: var(--text-muted);
+  font-size: .8125rem;
+}
+[data-flow="p3"] #galleryScrollHint span { font-size: 1.1rem; }
+[data-flow="p3"] #gallerySamples { grid-auto-columns: 82%; }
+[data-flow="p3"] .art-back small { display: block; margin-top: 12px; color: var(--text-muted); }
+[data-flow="p3"] #sampleSaveStatus:empty { display: none; }
+@media (min-width: 600px) {
+  [data-flow="p3"] #gallerySamples { grid-auto-columns: calc((100% - 72px) / 2.2); }
+}
+@media (min-width: 960px) {
+  [data-flow="p3"] #gallerySamples { grid-auto-columns: min(390px, calc((100% - 84px) / 3.15)); }
+}

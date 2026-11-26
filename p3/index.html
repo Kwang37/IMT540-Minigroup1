@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>4SQUARES Workspace</title>
-  <link rel="stylesheet" href="../assets/workspace.css?v=4afd0a0d3d">
+  <link rel="stylesheet" href="../assets/workspace.css?v=aa00e591e9">
 </head>
 <body data-flow="p3">
 
@@ -88,13 +88,11 @@
           <h2 id="galleryTitle" tabindex="-1">Gallery</h2>
           <button type="button" class="btn btn-primary" data-click="go-to-step">Continue to Reflection</button>
         </header>
-        <p>Compare how the examples express the same concept. Open a card to read what its composition emphasizes.</p>
-        <div class="action-row">
-          <button class="btn" type="button" data-click="scroll-samples">Previous Cards</button>
-          <button class="btn" type="button" data-click="scroll-samples-2">Next Cards</button>
-        </div>
-        <p id="sampleSaveHelp" class="meta-note" hidden>Curated examples · Save up to two to compare during reflection.<span id="sampleSaveStatus" class="sample-save-status" role="status"></span></p>
-        <div id="gallerySamples" class="sample-grid" tabindex="0" role="region" aria-label="Six example compositions"></div>
+        <figure class="gallery-strip">
+          <figcaption id="galleryScrollHint">Swipe or scroll sideways to explore <span aria-hidden="true">→</span></figcaption>
+          <div id="gallerySamples" class="sample-grid" tabindex="0" role="region" aria-label="Six example compositions" aria-describedby="galleryScrollHint"></div>
+        </figure>
+        <p id="sampleSaveStatus" class="sample-save-status" role="status"></p>
       </section>
       <!-- LEFT COLUMN: BOARD OR COMPARISON GALLERY -->
       <section id="stageSection" class="stage-section" aria-label="Composition workspace">
@@ -329,6 +327,6 @@
       <button type="button" class="btn reset-danger" data-click="reset-session-storage">Delete session</button>
     </div>
   </dialog>
-  <script type="module" src="../assets/workspace.js?v=4afd0a0d3d"></script>
+  <script type="module" src="../assets/workspace.js?v=aa00e591e9"></script>
 </body>
 </html>

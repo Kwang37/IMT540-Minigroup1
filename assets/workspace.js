@@ -372,7 +372,9 @@ const isP3 = document.body.dataset.flow === "p3";
       name.textContent = title;
       const label = document.createElement("small");
       label.textContent = source;
-      caption.append(name, label);
+      caption.append(name);
+      if (isP3) back.append(label);
+      else caption.append(label);
       figure.append(button, caption);
       if (pdfPattern.test(photo || "")) {
         const link = document.createElement("a");
@@ -450,8 +452,8 @@ const isP3 = document.body.dataset.flow === "p3";
     function renderGallerySamples() {
       const grid = document.getElementById("gallerySamples");
       grid.replaceChildren();
-      document.getElementById("galleryTitle").textContent = (isP3 ? "3. Explore Gallery · " : "") + selectedConcept + (isP3 ? "" : " Gallery");
-      document.getElementById("sampleSaveHelp").hidden = mode !== "online";
+      document.getElementById("galleryTitle").textContent = isP3 ? `Ways to show ${selectedConcept.toLowerCase()}` : `${selectedConcept} Gallery`;
+      if (!isP3) document.getElementById("sampleSaveHelp").hidden = mode !== "online";
       const status = document.getElementById("sampleSaveStatus");
       const examples = galleryExamples[selectedConcept] || [];
       status.textContent = "";
