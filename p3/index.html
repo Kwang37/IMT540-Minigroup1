@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>4SQUARES Workspace</title>
-  <link rel="stylesheet" href="../assets/workspace.css?v=c88f0fc93e">
+  <link rel="stylesheet" href="../assets/workspace.css?v=f0fb0e34df">
 </head>
 <body data-flow="p3">
 
@@ -130,20 +130,17 @@
                 <button id="redoCanvasBtn" type="button" class="btn" data-click="redo-canvas" aria-disabled="true" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z" title="Ctrl/⌘+Shift+Z">Redo</button>
                 <span id="canvasHistoryStatus" class="sr-only" role="status"></span>
               </div>
-              <div id="tiltControl" class="square-edit-controls" role="group" aria-labelledby="squareEditLabel" hidden>
-                <strong id="squareEditLabel"></strong>
-                <div class="square-edit-group" role="group" aria-label="Rotation">
-                  <span>Rotation</span>
-                  <button type="button" class="btn" data-click="rotate-active-square" aria-label="Rotate counterclockwise 15 degrees">−15°</button>
-                  <button type="button" class="btn" data-click="reset-active-tilt" aria-label="Reset rotation">0°</button>
-                  <button type="button" class="btn" data-click="rotate-active-square-2" aria-label="Rotate clockwise 15 degrees">+15°</button>
-                  <output id="tiltReadout" aria-label="Current rotation">0°</output>
-                </div>
-                <div class="square-edit-group" role="group" aria-label="Size">
-                  <span>Size</span>
-                  <button id="shrinkSquareBtn" type="button" class="btn" data-click="shrink-square" aria-label="Make selected square smaller">−</button>
-                  <output id="squareSizeReadout" aria-label="Size relative to the starting size">100%</output>
-                  <button id="growSquareBtn" type="button" class="btn" data-click="grow-square" aria-label="Make selected square larger">+</button>
+              <div id="tiltControl" class="square-edit-controls is-empty" role="group" aria-label="Selected square controls">
+                <p id="squareEditHint">Select a square to adjust its angle and scale.</p>
+                <div id="squareEditFields" hidden>
+                  <strong id="squareEditLabel" aria-label="Selected square"></strong>
+                  <label for="squareAngle" class="angle-label">Angle</label>
+                  <input id="squareAngle" class="square-range angle-range" type="range" min="-45" max="45" step="1" value="0" aria-label="Square rotation angle">
+                  <output id="tiltReadout" for="squareAngle">0°</output>
+                  <button id="resetSquareAngle" class="btn angle-reset" type="button" data-click="reset-active-tilt" aria-label="Reset angle to zero" aria-disabled="true">↺</button>
+                  <label for="squareScale" class="scale-label">Scale</label>
+                  <input id="squareScale" class="square-range scale-range" type="range" step="any" aria-label="Square scale percentage">
+                  <output id="squareSizeReadout" for="squareScale">100%</output>
                 </div>
               </div>
             </div>
@@ -333,6 +330,6 @@
       <button type="button" class="btn reset-danger" data-click="reset-session-storage">Delete session</button>
     </div>
   </dialog>
-  <script type="module" src="../assets/workspace.js?v=c88f0fc93d"></script>
+  <script type="module" src="../assets/workspace.js?v=f0fb0e34df"></script>
 </body>
 </html>

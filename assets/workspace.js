@@ -20,6 +20,7 @@ const isP3 = document.body.dataset.flow === "p3";
     let keptChoiceIdx = 0;
     let workingSquares = [];
     const HISTORY_LIMIT = 20;
+    let sliderEdit = null;
     const undoStack = [];
     const redoStack = [];
     let activeSquareId = null;
@@ -1336,6 +1337,7 @@ const isP3 = document.body.dataset.flow === "p3";
     }
 
     function clearCanvasHistory() {
+      sliderEdit = null;
       undoStack.length = 0;
       redoStack.length = 0;
       if (isP3) document.getElementById("canvasHistoryStatus").textContent = "";
@@ -1361,7 +1363,7 @@ const isP3 = document.body.dataset.flow === "p3";
     }
 
     function restoreCanvasEdit(reapply) {
-      if (!canModifyBoard() || squareGesture) return;
+      if (!canModifyBoard() || squareGesture || sliderEdit) return;
       const from = reapply ? redoStack : undoStack;
       const to = reapply ? undoStack : redoStack;
       if (!from.length) return;
@@ -1374,19 +1376,9 @@ const isP3 = document.body.dataset.flow === "p3";
         reapply ? "Canvas edit redone." : "Canvas edit undone.";
     }
 
-    function changeActiveSquareSize(direction) {
-      if (!canModifyBoard() || squareGesture) return;
-      const square = workingSquares.find(item => item.id === activeSquareId);
-      if (!square) return;
-      const nextSquare = { ...square };
-      resizeSquare(nextSquare, direction);
-      commitSquareEdit(square, nextSquare);
-      renderBoard();
-    }
-
     if (isP3) document.getElementById("workspaceShell").addEventListener("keydown", event => {
       if (!canModifyBoard() || squareGesture || event.altKey || !(event.metaKey || event.ctrlKey) ||
-          event.target.closest("textarea, input, select, [contenteditable]") ||
+          event.target.closest("textarea, input:not([type=range]), select, [contenteditable]") ||
           event.key.toLowerCase() !== "z") return;
       event.preventDefault();
       restoreCanvasEdit(event.shiftKey);
@@ -1510,22 +1502,100 @@ const isP3 = document.body.dataset.flow === "p3";
       }
     }
 
+    if (isP3) {
+      for (const id of ["squareAngle", "squareScale"]) {
+        const slider = document.getElementById(id);
+        const isAngle = id === "squareAngle";
+        if (!isAngle) {
+          slider.min = MIN_SQUARE_SIZE / DEFAULT_SQUARE_SIZE * 100;
+          slider.max = MAX_SQUARE_SIZE / DEFAULT_SQUARE_SIZE * 100;
+          slider.style.setProperty("--tick", (100 - slider.min) / (slider.max - slider.min) * 100 + "%");
+        }
+        const finish = () => {
+          if (sliderEdit?.slider !== slider) return;
+          const { square, next } = sliderEdit;
+          sliderEdit = null;
+          if (canModifyBoard() && workingSquares.includes(square) && activeSquareId === square.id) {
+            commitSquareEdit(square, next);
+          }
+          renderBoard();
+        };
+        slider.addEventListener("input", () => {
+          const square = workingSquares.find(item => item.id === activeSquareId);
+          if (!square || !canModifyBoard() || squareGesture) return;
+          const next = { ...square };
+          const raw = Number(slider.value);
+          if (isAngle) next.rot = Math.abs(raw) <= 4 ? 0 : raw;
+          else {
+            const scale = Math.abs(raw - 100) <= 4 ? 100 : Math.round(raw / 5) * 5;
+            const size = raw === Number(slider.min) ? MIN_SQUARE_SIZE
+              : raw === Number(slider.max) ? MAX_SQUARE_SIZE : scale * DEFAULT_SQUARE_SIZE / 100;
+            setSquareSize(next, size);
+          }
+          sliderEdit = { slider, square, next };
+          placeSquare(squareButtonMap.get(square.id), next);
+          showSquareValues(next, slider);
+        });
+        slider.addEventListener("change", finish);
+        slider.addEventListener("blur", finish);
+        slider.addEventListener("pointercancel", () => {
+          if (sliderEdit?.slider !== slider) return;
+          sliderEdit = null;
+          renderBoard();
+        });
+        slider.addEventListener("keydown", event => {
+          const delta = { ArrowLeft: -1, ArrowDown: -1, ArrowRight: 1, ArrowUp: 1 }[event.key];
+          if (!delta) return;
+          event.preventDefault();
+          finish();
+          const square = workingSquares.find(item => item.id === activeSquareId);
+          if (!square || !canModifyBoard() || squareGesture) return;
+          const next = { ...square };
+          const step = isAngle ? (event.shiftKey ? 15 : 1) : (event.shiftKey ? 10 : 5);
+          if (isAngle) next.rot = Math.max(-45, Math.min(45, square.rot + delta * step));
+          else setSquareSize(next, squareSize(square) + DEFAULT_SQUARE_SIZE * delta * step / 100);
+          commitSquareEdit(square, next);
+          renderBoard();
+        });
+      }
+    }
+
+    function showSquareValues(square, previewSlider) {
+      const values = [
+        ["squareAngle", "tiltReadout", square.rot, "°"],
+        ["squareScale", "squareSizeReadout", squareSize(square) / DEFAULT_SQUARE_SIZE * 100, "%"]
+      ];
+      for (const [inputId, outputId, value, unit] of values) {
+        const input = document.getElementById(inputId);
+        const label = Math.round(value) + unit;
+        if (input !== previewSlider) input.value = value;
+        input.setAttribute("aria-valuetext", label);
+        document.getElementById(outputId).value = label;
+      }
+      document.getElementById("resetSquareAngle").setAttribute("aria-disabled", String(square.rot === 0));
+    }
+
     function updateTiltToolbar() {
       const bar = document.getElementById("tiltControl");
       const sq = canModifyBoard() && workingSquares.find(s => s.id === activeSquareId);
+      if (isP3) {
+        document.getElementById("squareEditFields").hidden = !sq;
+        document.getElementById("squareEditHint").hidden = Boolean(sq);
+        bar.classList.toggle("is-empty", !sq);
+        if (sq) {
+          const badge = document.getElementById("squareEditLabel");
+          badge.textContent = `#${sq.id}`;
+          badge.setAttribute("aria-label", `Selected square ${sq.id}`);
+          showSquareValues(sq);
+        }
+        return;
+      }
       bar.hidden = !sq;
       if (!sq) return;
       const size = squareSize(sq);
       document.getElementById("tiltReadout").value = `${sq.rot}°`;
-      if (isP3) {
-        document.getElementById("squareEditLabel").textContent = `Square ${sq.id}`;
-        document.getElementById("squareSizeReadout").value = Math.round(size / DEFAULT_SQUARE_SIZE * 100) + "%";
-        document.getElementById("shrinkSquareBtn").setAttribute("aria-disabled", String(size <= MIN_SQUARE_SIZE));
-        document.getElementById("growSquareBtn").setAttribute("aria-disabled", String(size >= MAX_SQUARE_SIZE));
-      } else {
-        bar.style.left = `${Math.max(18, Math.min(82, sq.x + size / 2))}%`;
-        bar.style.top = `${sq.y > 12 ? sq.y - 9 : sq.y + size + 3}%`;
-      }
+      bar.style.left = `${Math.max(18, Math.min(82, sq.x + size / 2))}%`;
+      bar.style.top = `${sq.y > 12 ? sq.y - 9 : sq.y + size + 3}%`;
     }
 
     function rotateActiveSquare(delta, event) {
@@ -1540,7 +1610,7 @@ const isP3 = document.body.dataset.flow === "p3";
     }
 
     function resetActiveTilt(event) {
-      if (!canModifyBoard() || squareGesture) return;
+      if (!canModifyBoard() || squareGesture || event?.currentTarget.getAttribute("aria-disabled") === "true") return;
       const sq = workingSquares.find(s => s.id === activeSquareId);
       if (!sq) return;
       const next = { ...sq, rot: 0 };
@@ -1907,8 +1977,6 @@ const isP3 = document.body.dataset.flow === "p3";
       "confirm-discard-draft": () => confirmDiscardWorkingDraft(),
       "undo-canvas": () => restoreCanvasEdit(false),
       "redo-canvas": () => restoreCanvasEdit(true),
-      "shrink-square": () => changeActiveSquareSize(-1),
-      "grow-square": () => changeActiveSquareSize(1),
       "go-to-step-2": () => goToStep(3),
       "save-exploration": () => saveExploration(),
       "lock-baseline-v1": () => lockBaselineV1(),
