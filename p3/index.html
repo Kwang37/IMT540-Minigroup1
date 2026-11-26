@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>4SQUARES Workspace</title>
-  <link rel="stylesheet" href="../assets/workspace.css?v=985aa14b60">
+  <link rel="stylesheet" href="../assets/workspace.css?v=4a8a776534">
 </head>
 <body data-flow="p3">
 
@@ -60,7 +60,7 @@
         </div>
       </div>
 
-      <nav class="desktop-progress progress-pill glass-floating" aria-label="Activity progress">
+      <nav class="desktop-progress progress-pill" aria-label="Activity progress">
         <ol class="step-list">
           <li id="stepNav1" class="step-item"><button type="button" data-step="1" data-click="navigate-p3-step">1. Create V1</button></li>
           <li id="stepNavPre" class="step-item"><button type="button" data-step="1.25" data-click="navigate-p3-step">2. Pre-Reflect</button></li>
@@ -74,8 +74,8 @@
       <nav class="mobile-progress compact-progress" aria-label="Activity steps">
         <span id="mobileStageLabel" class="sr-only">Step 1 of 5</span>
         <ol id="mobileStepList" class="step-list mobile-step-list">
-          <li><button type="button" class="btn" data-step="1" data-click="navigate-p3-step">1. Create</button></li>
-          <li><button type="button" class="btn" data-step="1.25" data-click="navigate-p3-step">2. Reflect</button></li>
+          <li><button type="button" class="btn" data-step="1" data-click="navigate-p3-step">1. Create V1</button></li>
+          <li><button type="button" class="btn" data-step="1.25" data-click="navigate-p3-step">2. Pre-Reflect</button></li>
           <li><button type="button" class="btn" data-step="1.5" data-click="navigate-p3-step">3. Gallery</button></li>
           <li><button type="button" class="btn" data-step="2" data-click="navigate-p3-step">4. Decide</button></li>
           <li class="mobile-variation"><button type="button" class="btn" data-step="3" data-click="navigate-p3-step">+ Variation</button></li>
@@ -83,7 +83,7 @@
         </ol>
       </nav>
 
-      <p id="localSaveStatus" class="meta-note save-indicator" role="status"><span class="save-status-full">Local autosave</span><span class="save-status-short">Autosave</span></p>
+      <p id="localSaveStatus" class="meta-note save-indicator" role="status">Local autosave</p>
     </header>
 
     <main class="workspace-main">
@@ -127,8 +127,8 @@
           </div>
             <div id="canvasEditControls" class="canvas-edit-controls" hidden>
               <div class="canvas-edit-actions" role="group" aria-label="Canvas history">
-                <button id="undoCanvasBtn" type="button" class="btn" data-click="undo-canvas" aria-disabled="true" aria-keyshortcuts="Control+Z Meta+Z" title="Ctrl/⌘+Z">Undo</button>
-                <button id="redoCanvasBtn" type="button" class="btn" data-click="redo-canvas" aria-disabled="true" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z" title="Ctrl/⌘+Shift+Z">Redo</button>
+                <button id="undoCanvasBtn" type="button" class="btn" data-click="undo-canvas" aria-disabled="true" aria-keyshortcuts="Control+Z Meta+Z" title="Ctrl/⌘+Z"><span aria-hidden="true">↶</span> Undo</button>
+                <button id="redoCanvasBtn" type="button" class="btn" data-click="redo-canvas" aria-disabled="true" aria-keyshortcuts="Control+Shift+Z Meta+Shift+Z" title="Ctrl/⌘+Shift+Z"><span aria-hidden="true">↷</span> Redo</button>
                 <span id="canvasHistoryStatus" class="sr-only" role="status"></span>
               </div>
               <div id="tiltControl" class="square-edit-controls glass-floating is-empty" role="group" aria-label="Selected square controls">
@@ -334,6 +334,6 @@
       <button type="button" class="btn reset-danger" data-click="reset-session-storage">Delete session</button>
     </div>
   </dialog>
-  <script type="module" src="../assets/workspace.js?v=985aa14b60"></script>
+  <script type="module" src="../assets/workspace.js?v=4a8a776534"></script>
 </body>
 </html>
