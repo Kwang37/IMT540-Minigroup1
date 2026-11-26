@@ -2141,3 +2141,52 @@ const isP3 = document.body.dataset.flow === "p3";
         element.addEventListener(event, actions[element.getAttribute(`data-${event}`)]);
       });
     }
+
+    if (isP3) {
+      const entry = document.getElementById("entryGate");
+      const bubbles = [...document.querySelectorAll("#conceptPicker .concept-bubble")];
+      const washes = [...entry.querySelectorAll(".entry-wash")];
+      const motion = window.matchMedia("(hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference)");
+      let frame = 0;
+
+      function resetEntryMotion() {
+        cancelAnimationFrame(frame);
+        for (const bubble of bubbles) {
+          bubble.style.removeProperty("--pull-x");
+          bubble.style.removeProperty("--pull-y");
+        }
+        for (const wash of washes) {
+          wash.style.removeProperty("--wash-x");
+          wash.style.removeProperty("--wash-y");
+        }
+      }
+
+      entry.addEventListener("pointermove", event => {
+        if (!motion.matches || event.pointerType !== "mouse") return;
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          const bounds = entry.getBoundingClientRect();
+          const x = (event.clientX - bounds.left) / bounds.width - .5;
+          const y = (event.clientY - bounds.top) / bounds.height - .5;
+          washes.forEach((wash, index) => {
+            const strength = index === 0 ? 26 : -20;
+            wash.style.setProperty("--wash-x", x * strength + "px");
+            wash.style.setProperty("--wash-y", y * strength + "px");
+          });
+          bubbles.forEach(bubble => {
+            if (!bubble.offsetParent) return;
+            const center = bubble.offsetLeft + bubble.offsetWidth / 2;
+            const middle = bubble.offsetTop + bubble.offsetHeight / 2;
+            const parent = bubble.offsetParent.getBoundingClientRect();
+            const dx = event.clientX - parent.left - center;
+            const dy = event.clientY - parent.top - middle;
+            const distance = Math.hypot(dx, dy);
+            const pull = distance < 125 ? .055 : 0;
+            bubble.style.setProperty("--pull-x", dx * pull + "px");
+            bubble.style.setProperty("--pull-y", dy * pull + "px");
+          });
+        });
+      });
+      entry.addEventListener("pointerleave", resetEntryMotion);
+      motion.addEventListener("change", resetEntryMotion);
+    }

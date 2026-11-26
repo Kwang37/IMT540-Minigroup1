@@ -5,30 +5,34 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>4SQUARES Workspace</title>
-  <link rel="stylesheet" href="../assets/workspace.css?v=4eb8c42884">
+  <link rel="stylesheet" href="../assets/workspace.css?v=79d9e0fb7f">
 </head>
 <body data-flow="p3">
 
   <!-- SCREEN 0: ENTRY GATE -->
-  <main id="entryGate" class="entry-gate">
-    <section class="gate-dialog glass-modal" aria-labelledby="gateHeading">
-      <header class="gate-header">
-        <div class="mark-4squares" aria-hidden="true">
-          <span></span><span></span><span></span><span></span>
-        </div>
-        <h1 id="gateHeading">4SQUARES Workspace</h1>
-      </header>
-
-      <p class="concept-intro">Arrange four squares to express an idea. Then see how others approached it and decide what you’d keep or change.</p>
-      <h2 class="concept-picker-heading" id="conceptPickerHeading">Choose a concept</h2>
-
-      <div id="conceptPicker" class="gate-grid" role="group" aria-label="Choose a concept">
-        <button type="button" class="gate-option concept-bubble" data-click="choose-concept">Tension</button>
-        <button type="button" class="gate-option concept-bubble" data-click="choose-concept">Balance</button>
-        <button type="button" class="gate-option concept-bubble" data-click="choose-concept">Chaos</button>
-        <button type="button" class="gate-option concept-bubble" data-click="choose-concept">Order</button>
+  <main id="entryGate" class="entry-gate spatial-entry">
+    <div class="entry-wash entry-wash-purple" aria-hidden="true"></div>
+    <div class="entry-wash entry-wash-gold" aria-hidden="true"></div>
+    <section class="spatial-layout" aria-labelledby="gateHeading">
+      <div class="spatial-intro">
+        <header class="gate-header">
+          <div class="mark-4squares" aria-hidden="true">
+            <span></span><span></span><span></span><span></span>
+          </div>
+          <h1 id="gateHeading">4SQUARES Workspace</h1>
+        </header>
+        <p class="concept-intro">Arrange four squares to express an idea. Then see how others approached it and decide what you’d keep or change.</p>
+        <button type="button" id="resumeDraftBtn" class="btn" data-click="resume-draft" hidden>Resume Saved Session</button>
       </div>
-      <button type="button" id="resumeDraftBtn" class="btn" data-click="resume-draft" hidden>Resume Saved Session</button>
+      <div class="spatial-field">
+        <h2 id="conceptPickerHeading">Choose a concept to begin</h2>
+        <div id="conceptPicker" role="group" aria-labelledby="conceptPickerHeading">
+          <button type="button" class="concept-bubble" data-click="choose-concept"><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="26" y="27" width="16" height="16" transform="rotate(-18 34 35)"/><rect x="10" y="10" width="18" height="18"/><rect x="57" y="55" width="17" height="17"/><rect x="74" y="74" width="16" height="16" transform="rotate(22 82 82)"/></svg><span>Tension</span></button>
+          <button type="button" class="concept-bubble" data-click="choose-concept"><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="17" y="38" width="28" height="28"/><rect x="68" y="34" width="12" height="12"/><rect x="68" y="51" width="12" height="12"/><rect x="68" y="68" width="12" height="12"/></svg><span>Balance</span></button>
+          <button type="button" class="concept-bubble" data-click="choose-concept"><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="15" y="14" width="20" height="20" transform="rotate(-29 25 24)"/><rect x="64" y="16" width="17" height="17" transform="rotate(32 72.5 24.5)"/><rect x="37" y="46" width="29" height="29" transform="rotate(12 51.5 60.5)"/><rect x="67" y="70" width="15" height="15" transform="rotate(-20 74.5 77.5)"/></svg><span>Chaos</span></button>
+          <button type="button" class="concept-bubble" data-click="choose-concept"><svg viewBox="0 0 100 100" aria-hidden="true"><rect x="24" y="24" width="21" height="21"/><rect x="55" y="24" width="21" height="21"/><rect x="24" y="55" width="21" height="21"/><rect x="55" y="55" width="21" height="21"/></svg><span>Order</span></button>
+        </div>
+      </div>
       <section id="tutorial" aria-labelledby="tutorialTitle" hidden>
         <p id="tutorialProgress" class="meta-note"></p>
         <h2 id="tutorialTitle" tabindex="-1" aria-describedby="tutorialProgress"></h2>
@@ -330,6 +334,6 @@
       <button type="button" class="btn reset-danger" data-click="reset-session-storage">Delete session</button>
     </div>
   </dialog>
-  <script type="module" src="../assets/workspace.js?v=2866a52375"></script>
+  <script type="module" src="../assets/workspace.js?v=79d9e0fb7f"></script>
 </body>
 </html>

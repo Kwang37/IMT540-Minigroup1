@@ -1370,3 +1370,109 @@
 .p3-header .progress-pill .step-item button:disabled:not([aria-current]) { color: #64748b; }
 .p3-header .progress-pill .step-item button:not(:disabled):hover { background: #e2e8f0; }
 .p3-header .progress-pill #stepNav3 { padding: 0; }
+
+/* Frameless P3 entry and open concept field. */
+.spatial-entry {
+  position: relative;
+  isolation: isolate;
+  display: grid;
+  min-height: 100vh;
+  min-height: 100dvh;
+  padding: clamp(24px, 6vw, 100px);
+  overflow: clip;
+  background: radial-gradient(rgb(203 213 225 / 55%) 1px, transparent 1px) 0 0 / 24px 24px #f7f8fa;
+}
+.entry-wash {
+  position: absolute;
+  z-index: -1;
+  width: min(65vw, 850px);
+  height: min(72vh, 730px);
+  pointer-events: none;
+  border-radius: 50%;
+  filter: blur(130px);
+  transform: translate3d(var(--wash-x, 0px), var(--wash-y, 0px), 0);
+  transition: transform .8s ease-out;
+}
+.entry-wash-purple { top: -20%; left: -13%; background: rgb(75 46 131 / 14%); }
+.entry-wash-gold { right: -14%; bottom: -23%; background: rgb(183 165 122 / 20%); }
+.spatial-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 38fr) minmax(0, 62fr);
+  align-items: center;
+  gap: clamp(24px, 5vw, 85px);
+  width: min(100%, 1460px);
+  margin: auto;
+}
+.spatial-intro .gate-header { display: grid; gap: 18px; }
+.spatial-intro h1 {
+  font-size: clamp(2.5rem, 5.2vw, 5.4rem);
+  line-height: 1.02;
+  letter-spacing: -.06em;
+  overflow-wrap: anywhere;
+}
+.spatial-intro .concept-intro { display: block; max-width: 36ch; margin-top: 20px; color: var(--text-muted); }
+.spatial-intro #resumeDraftBtn { margin-top: 20px; border-radius: 999px; background: rgb(255 255 255 / 70%); min-height: 44px; }
+.spatial-field { padding-block: 12px; min-width: 0; }
+.spatial-field h2 { color: var(--text-muted); font-size: .875rem; font-weight: 600; text-align: center; }
+.spatial-entry #conceptPicker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  justify-items: center;
+  gap: clamp(24px, 5vw, 82px) 16px;
+  margin-top: clamp(26px, 5vh, 60px);
+}
+.spatial-entry .concept-bubble {
+  --bubble-size: 162px;
+  --float-time: 7s;
+  --float-delay: -2s;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, var(--bubble-size));
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid rgb(255 255 255 / 90%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 68%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow: 0 12px 32px rgb(75 46 131 / 6%), inset 0 1px 1px rgb(255 255 255 / 95%);
+  color: #1e1b2e;
+  font-family: inherit;
+  font-size: clamp(.95rem, 1.5vw, 1.15rem);
+  font-weight: 650;
+  cursor: pointer;
+  translate: var(--pull-x, 0px) var(--pull-y, 0px);
+  transition: translate .3s ease-out, border-color .25s, box-shadow .25s;
+  animation: concept-float var(--float-time) var(--float-delay) ease-in-out infinite;
+}
+.spatial-entry .concept-bubble:nth-child(2) { --bubble-size: 175px; --float-time: 8s; --float-delay: -5s; margin-top: 22px; }
+.spatial-entry .concept-bubble:nth-child(3) { --bubble-size: 145px; --float-time: 6.5s; --float-delay: -4s; }
+.spatial-entry .concept-bubble:nth-child(4) { --bubble-size: 156px; --float-time: 9s; --float-delay: -1s; margin-top: 16px; }
+.spatial-entry .concept-bubble svg { position: absolute; inset: 17%; width: 66%; fill: #4b2e83; opacity: 0; transition: opacity .25s; }
+.spatial-entry .concept-bubble span { position: relative; }
+.spatial-entry .concept-bubble:is(:hover, :focus-visible) {
+  animation-play-state: paused;
+  border-color: rgb(75 46 131 / 25%) rgb(183 165 122 / 50%) rgb(183 165 122 / 50%) rgb(75 46 131 / 25%);
+  box-shadow: 0 12px 32px rgb(75 46 131 / 12%), inset 0 1px 1px white;
+}
+.spatial-entry .concept-bubble:is(:hover, :focus-visible) svg { opacity: .14; }
+@keyframes concept-float {
+  0%, 100% { transform: translateY(-8px) scale(.97); }
+  50% { transform: translateY(8px) scale(1.03); }
+}
+.spatial-layout:has(#conceptPicker[hidden]) { display: block; max-width: 680px; }
+.spatial-layout:has(#conceptPicker[hidden]) :is(.spatial-intro, .spatial-field) { display: none; }
+.spatial-entry #tutorial { padding: clamp(20px, 5vw, 44px); border-radius: var(--glass-radius); background: var(--glass-modal-bg); box-shadow: var(--glass-modal-shadow); }
+@media (max-width: 767px) {
+  .spatial-entry { padding: 30px clamp(18px, 6vw, 42px) 44px; }
+  .spatial-layout { grid-template-columns: minmax(0, 1fr); gap: 30px; }
+  .spatial-entry .concept-bubble { max-width: 155px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spatial-entry .concept-bubble, .spatial-entry .concept-bubble svg, .entry-wash {
+    animation: none;
+    transition: none;
+  }
+}
