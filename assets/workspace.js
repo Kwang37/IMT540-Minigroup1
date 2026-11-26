@@ -2190,3 +2190,85 @@ const isP3 = document.body.dataset.flow === "p3";
       entry.addEventListener("pointerleave", resetEntryMotion);
       motion.addEventListener("change", resetEntryMotion);
     }
+
+    if (isP3) {
+      const entry = document.getElementById("entryGate");
+      const picker = document.getElementById("conceptPicker");
+      const bubbles = [...picker.querySelectorAll(".concept-bubble")];
+      const touchLayout = window.matchMedia("(hover: none) and (pointer: coarse), (max-width: 767px)");
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+      let spotlight = null;
+      let spotlightIndex = 0;
+      let spotlightTimer = 0;
+      let interacted = false;
+      let press = null;
+      let confirming = false;
+
+      function stopSpotlight() {
+        clearInterval(spotlightTimer);
+        spotlightTimer = 0;
+        spotlight?.classList.remove("is-spotlit");
+        spotlight = null;
+      }
+
+      function syncSpotlight() {
+        const canRun = touchLayout.matches && !reducedMotion.matches &&
+          !interacted && !document.hidden && !entry.hidden && !picker.hidden;
+        if (!canRun) stopSpotlight();
+        else if (!spotlightTimer) {
+          spotlightTimer = setInterval(() => {
+            spotlight?.classList.remove("is-spotlit");
+            spotlight = bubbles[spotlightIndex];
+            spotlight.classList.add("is-spotlit");
+            spotlightIndex = (spotlightIndex + 1) % bubbles.length;
+          }, 2800);
+        }
+      }
+
+      entry.addEventListener("pointerdown", event => {
+        if (picker.hidden || !touchLayout.matches) return;
+        interacted = true;
+        stopSpotlight();
+        const bubble = event.target.closest("#conceptPicker .concept-bubble");
+        if (!event.isPrimary || event.pointerType === "mouse" || !bubble || confirming) return;
+        press = { bubble, pointerId: event.pointerId };
+        bubble.classList.add("is-touch-pressed");
+      });
+
+      function releaseBubble(event) {
+        if (press?.pointerId !== event.pointerId) return;
+        press.bubble.classList.remove("is-touch-pressed");
+        press = null;
+      }
+
+      window.addEventListener("pointerup", releaseBubble);
+      window.addEventListener("pointercancel", releaseBubble);
+      picker.addEventListener("click", event => {
+        const bubble = event.target.closest(".concept-bubble");
+        if (!bubble) return;
+        interacted = true;
+        stopSpotlight();
+        if (confirming) {
+          event.stopPropagation();
+          return;
+        }
+        if (!touchLayout.matches || !["touch", "pen"].includes(event.pointerType) || reducedMotion.matches) return;
+        event.stopPropagation();
+        confirming = true;
+        bubble.classList.add("is-touch-confirmed");
+        setTimeout(() => {
+          confirming = false;
+          bubble.classList.remove("is-touch-confirmed");
+          if (!entry.hidden && !picker.hidden) chooseConcept(bubble);
+        }, 160);
+      }, true);
+
+      const entryVisibility = new MutationObserver(syncSpotlight);
+      for (const element of [entry, picker]) {
+        entryVisibility.observe(element, { attributes: true, attributeFilter: ["hidden"] });
+      }
+      document.addEventListener("visibilitychange", syncSpotlight);
+      touchLayout.addEventListener("change", syncSpotlight);
+      reducedMotion.addEventListener("change", syncSpotlight);
+      syncSpotlight();
+    }

@@ -1476,3 +1476,48 @@
     transition: none;
   }
 }
+
+@media (hover: none) and (pointer: coarse), (max-width: 767px) {
+  .spatial-entry .concept-bubble {
+    touch-action: manipulation;
+    border: 1px solid rgb(75 46 131 / 12%);
+    box-shadow: 0 10px 28px rgb(75 46 131 / 8%), inset 0 1px 1px rgb(255 255 255 / 95%);
+    transition: scale .22s ease-out, translate .3s ease-out, border-color .25s, box-shadow .25s;
+  }
+  .spatial-entry .concept-bubble svg { opacity: .06; }
+  .spatial-entry .concept-bubble:focus-visible svg { opacity: .14; }
+  .spatial-entry .concept-bubble:is(.is-spotlit, .is-touch-pressed, .is-touch-confirmed) {
+    animation-play-state: paused;
+    border-color: rgb(75 46 131 / 30%) rgb(183 165 122 / 55%) rgb(183 165 122 / 55%) rgb(75 46 131 / 30%);
+    box-shadow: 0 10px 28px rgb(75 46 131 / 14%), inset 0 1px 1px white;
+  }
+  .spatial-entry .concept-bubble.is-spotlit { scale: 1.04; }
+  .spatial-entry .concept-bubble.is-spotlit svg { opacity: .16; }
+  .spatial-entry .concept-bubble.is-touch-pressed { scale: .95; transition-duration: 70ms; }
+  .spatial-entry .concept-bubble.is-touch-pressed svg { opacity: .22; transition-duration: 70ms; }
+  .spatial-entry .concept-bubble.is-touch-confirmed { scale: 1.015; transition-duration: 160ms; }
+  .spatial-entry .concept-bubble.is-touch-confirmed svg { opacity: .22; transition-duration: 160ms; }
+}
+@media (hover: none) and (pointer: coarse) {
+  .spatial-entry .concept-bubble:not(:focus-visible, .is-spotlit, .is-touch-pressed, .is-touch-confirmed):hover {
+    animation-play-state: running;
+    border-color: rgb(75 46 131 / 12%);
+    box-shadow: 0 10px 28px rgb(75 46 131 / 8%), inset 0 1px 1px rgb(255 255 255 / 95%);
+  }
+  .spatial-entry .entry-wash { animation: entry-wash-drift 14s ease-in-out infinite alternate; }
+  .spatial-entry .entry-wash-gold { animation-direction: alternate-reverse; }
+}
+@keyframes entry-wash-drift {
+  from { transform: translate3d(-16px, -10px, 0); }
+  to { transform: translate3d(18px, 14px, 0); }
+}
+@media (max-width: 767px) {
+  .spatial-entry { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+  .spatial-layout { gap: 22px; }
+  .spatial-entry #conceptPicker { margin-top: 18px; row-gap: 20px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .spatial-entry .entry-wash { animation: none; }
+  .spatial-entry .concept-bubble, .spatial-entry .concept-bubble svg { transition: none; }
+  .spatial-entry .concept-bubble:is(.is-touch-pressed, .is-touch-confirmed) { scale: 1; }
+}
