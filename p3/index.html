@@ -37,7 +37,7 @@
           <div class="action-row">
             <button id="tutorialBack" class="btn" type="button" data-click="show-tutorial-step" hidden>Back</button>
             <button id="tutorialContinue" class="btn btn-primary" type="button" data-click="advance-tutorial">Continue</button>
-            <button id="tutorialSkip" class="btn" type="button" data-click="close-tutorial">Skip Tutorial</button>
+            <button id="tutorialSkip" class="btn" type="button" data-click="close-tutorial">Skip intro</button>
           </div>
         </div>
       </section>
@@ -191,7 +191,7 @@
           </section>
         </section>
         <section id="explorationReview" class="panel-group" aria-labelledby="explorationReviewTitle" hidden>
-          <h2 id="explorationReviewTitle">Choose the Arrangement That Best Expresses Your Concept</h2>
+          <h2 id="explorationReviewTitle">Pick the arrangement you’d like to start with</h2>
           <p id="explorationReviewPrompt"></p>
           <ul id="explorationList" class="exploration-grid" aria-label="Your saved arrangements"></ul>
         </section>
@@ -203,26 +203,27 @@
 
           <button id="backToComposition" type="button" class="btn" data-click="go-to-step-4" hidden>Back to Composition</button>
           <div>
-            <p id="reflectionIntro" class="meta-note">Look at your arrangement before seeing anyone else’s. A sentence or two is enough.</p>
+            <p id="reflectionIntro" class="meta-note">Take a moment with your arrangement before opening the Gallery. A sentence or two is enough.</p>
           </div>
 
           <div>
-            <label for="goalField" id="firstReflectionPrompt">Why does this arrangement express your concept best? Point to one detail, such as a gap, angle, or overlap.</label>
-            <textarea id="goalField" placeholder="I wanted to show … so I …" data-input="validate-step1-gate"></textarea>
+            <label for="goalField" id="firstReflectionPrompt">How does this arrangement capture your chosen idea?</label>
+            <p id="firstReflectionHint" class="meta-note">Start with one detail, such as a tight gap, a tilted edge, or an open corner.</p>
+            <textarea id="goalField" aria-describedby="firstReflectionHint" data-input="validate-step1-gate"></textarea>
           </div>
 
           <div id="nextExploration">
-            <label for="nextField">What would you try next? (Optional)</label>
-            <input type="text" id="nextField" placeholder="One thing I might change is …" />
+            <label for="nextField">What might you test next? (Optional)</label>
+            <input type="text" id="nextField" data-input="validate-step1-gate" placeholder="One thing I might change is …" />
           </div>
 
           <details id="reflectionHelp">
-            <summary>Need help getting started?</summary>
-            <p>Look at your arrangement. Pick one detail you can point to and explain what you wanted it to do.</p>
+            <summary>Need a starting point?</summary>
+            <p>Try noticing one of these details.</p>
             <ul>
-              <li>Which squares did you put close together or far apart? Why?</li>
-              <li>Did you line up any edges, overlap squares, or turn one? What effect did you want?</li>
-              <li>Where did you leave empty space? What does it make you notice?</li>
+              <li><strong>Closeness</strong> · Squares that almost touch or feel pulled apart.</li>
+              <li><strong>Edges and tilt</strong> · Edges that line up, overlap, or lean.</li>
+              <li><strong>Quiet space</strong> · Where the open space draws your eye.</li>
             </ul>
           </details>
           <div class="action-row">
@@ -241,19 +242,19 @@
           <section id="reflectionReference" aria-label="Compositions to compare">
             <div id="reflectionReferenceCard" class="reflection-reference-grid"></div>
           </section>
-          <p class="meta-note">Ideas to look for: spacing, balance, contrast, or tension at the edges.</p>
           <div class="reflection-question">
             <label for="understandingShiftField" id="secondReflectionPrompt">What did the Gallery help you notice?</label>
-            <textarea id="understandingShiftField" rows="4" data-input="validate-step2-gate"></textarea>
+            <p id="secondReflectionHint" class="meta-note">You might notice how a layout uses edges, open space, or contrast.</p>
+            <textarea aria-describedby="secondReflectionHint" id="understandingShiftField" rows="4" data-input="validate-step2-gate"></textarea>
           </div>
           <p id="reviewDecisionStatus" class="meta-note" hidden></p>
           <button type="button" id="reviseDecisionBtn" class="btn" data-click="revise-reflection-decision" hidden>Revise decision</button>
           <button type="button" id="continueReflectionBtn" class="btn btn-primary" data-click="show-reflection-next" aria-controls="reflectionNext" disabled>Continue</button>
           <section id="reflectionNext" class="reflection-next-stage" aria-labelledby="reflectionNextTitle" hidden>
-            <h3 id="reflectionNextTitle" class="panel-title" tabindex="-1">Choose how to continue</h3>
+            <h3 id="reflectionNextTitle" class="panel-title" tabindex="-1">Where would you like to go from here?</h3>
             <div class="reflection-next">
-              <button type="button" id="keepFirstBtn" class="btn" data-click="finish-reflection">Keep original</button>
-              <button type="button" id="toStep3Btn" class="btn" data-click="finish-reflection-2">Try a variation</button>
+              <button type="button" id="keepFirstBtn" class="btn" data-click="finish-reflection">Stay with my original</button>
+              <button type="button" id="toStep3Btn" class="btn" data-click="finish-reflection-2">Explore a variation</button>
             </div>
           </section>
           <div class="draft-actions">
@@ -266,11 +267,11 @@
           <h2 id="step3Title" class="panel-title">Try a Variation (Optional)</h2>
 
           <p id="variationInstruction" class="source-disclaimer">
-            Try changing one thing you noticed during reflection. Move, turn, or resize a square. Choose <strong>Save New Version</strong> to keep both arrangements.
+            Test one small shift. Move, tilt, or resize a square, then choose <strong>Save New Version</strong> when you want to keep it.
           </p>
 
           <div class="disclosure-block">
-            <label for="activeReflectionSummary">Your Reflection 2</label>
+            <h3>What you noticed in the Gallery</h3>
             <blockquote id="activeReflectionSummary" class="quote-text"></blockquote>
           </div>
 
@@ -286,8 +287,8 @@
         <section id="panelStep4" class="panel-group" aria-labelledby="step4Title" hidden>
           <h2 id="step4Title" class="panel-title">5. Compare &amp; Export</h2>
           <div class="journey-grid" id="thinkingJourney">
-            <section><h3>Before the Gallery</h3><div id="journeyBaseline"></div><blockquote id="journeyBefore"></blockquote></section>
-            <section><h3>What you noticed in the Gallery</h3><blockquote id="journeyAfter"></blockquote></section>
+            <section><h3>Your initial note</h3><div id="journeyBaseline"></div><blockquote id="journeyBefore"></blockquote></section>
+            <section><h3>What stood out in the Gallery</h3><blockquote id="journeyAfter"></blockquote></section>
           </div>
 
           <div id="journeyFinal"></div>
@@ -296,10 +297,10 @@
           <button type="button" id="continueDecisionBtn" class="btn btn-primary" data-click="show-decision" aria-controls="decisionPanel" hidden>Continue to decision</button>
           <section id="decisionPanel" class="panel-group" aria-labelledby="finalReasonLabel" hidden>
             <div>
-              <label id="finalReasonLabel" for="finalReasonField" tabindex="-1">Why keep this version over the other saved choices?</label>
-              <textarea id="finalReasonField" data-input="hide-decision-export"></textarea>
+              <label id="finalReasonLabel" for="finalReasonField" tabindex="-1">What makes this version feel right now?</label>
+              <textarea id="finalReasonField" placeholder="A quick note about what feels right or what you chose to leave out." data-input="hide-decision-export"></textarea>
             </div>
-            <button type="button" class="btn btn-primary" data-click="record-decision-log" aria-controls="decisionExport">Save Decision to Log</button>
+            <button type="button" class="btn btn-primary" data-click="record-decision-log" aria-controls="decisionExport">Record Final Note</button>
           </section>
 
           <section id="decisionExport" class="panel-group" aria-label="Export decision" hidden>
@@ -329,6 +330,6 @@
       <button type="button" class="btn reset-danger" data-click="reset-session-storage">Delete session</button>
     </div>
   </dialog>
-  <script type="module" src="../assets/workspace.js?v=4eb8c42884"></script>
+  <script type="module" src="../assets/workspace.js?v=2866a52375"></script>
 </body>
 </html>

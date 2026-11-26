@@ -79,9 +79,9 @@ const isP3 = document.body.dataset.flow === "p3";
       const back = document.getElementById("backToComposition");
       back.hidden = v1Locked;
       back.textContent = usesExploration() ? "Back to Arrangements" : "Back to Composition";
-      document.getElementById("nextExploration").hidden = usePhoto || currentStep === 1.25;
+      document.getElementById("nextExploration").hidden = usePhoto || (!isP3 && currentStep === 1.25);
       document.getElementById("reflectionIntro").hidden = usePhoto;
-      document.getElementById("firstReflectionPrompt").textContent = usePhoto
+      document.getElementById("firstReflectionPrompt").textContent = isP3 ? `How does this arrangement capture ${selectedConcept.toLowerCase()} for you?` : usePhoto
         ? "Why did you arrange the squares this way?"
         : "What idea or feeling did you want to show? Describe one choice you made with the squares and why.";
       document.getElementById("ghostToolbar").hidden = usePhoto || currentStep !== 3;
@@ -435,7 +435,7 @@ const isP3 = document.body.dataset.flow === "p3";
           compositionReference("Your V1", choices[0].squares), ...cards
         );
         document.getElementById("secondReflectionPrompt").textContent = cards.length
-          ? "What did comparing these arrangements help you notice about your own?"
+          ? "What do you notice about your own arrangement beside the examples you saved?"
           : "What did the Gallery help you notice about your own arrangement?";
         return;
       }
@@ -878,7 +878,7 @@ const isP3 = document.body.dataset.flow === "p3";
       const list = document.getElementById("explorationList");
       document.getElementById("explorationReviewPrompt").textContent =
         v1Locked ? "Review your six arrangements. Your selected V1 is marked."
-          : `Compare your arrangements. Which one best shows ${selectedConcept.toLowerCase()}?`;
+          : `Look across your arrangements and pick one to carry forward.`;
       list.replaceChildren();
       explorations.forEach((squares, index) => {
         const item = document.createElement("li");
@@ -891,7 +891,10 @@ const isP3 = document.body.dataset.flow === "p3";
         button.append(explorationThumbnail(squares), caption);
         button.setAttribute("aria-pressed", String(index === reviewedArrangement));
         button.addEventListener("click", () => {
-          if (reviewedArrangement !== index) document.getElementById("goalField").value = "";
+          if (reviewedArrangement !== index) {
+            document.getElementById("goalField").value = "";
+            document.getElementById("nextField").value = "";
+          }
           reviewedArrangement = index;
           workingSquares = clone(squares);
           goToStep(1.25);
@@ -1182,7 +1185,7 @@ const isP3 = document.body.dataset.flow === "p3";
       document.getElementById("finalReasonLabel").textContent = !isCompare
         ? "Why did you keep this arrangement? (Optional)"
         : "Why keep this version over the other saved choices?";
-      document.getElementById("finalReasonField").placeholder = !isCompare ? "" : "What helped you choose?";
+      if (!isP3) document.getElementById("finalReasonField").placeholder = !isCompare ? "" : "What helped you choose?";
       document.getElementById("finishVariationsBtn").textContent = inPerson || choices.length < 2 ? "View Summary" : "Compare Versions";
       document.getElementById("contextPanel").classList.toggle("summary-only", isSummary);
       document.getElementById("workspaceShell").classList.toggle("reflection-screen", currentStep === 2 || currentStep === 1.25);
@@ -1822,9 +1825,8 @@ const isP3 = document.body.dataset.flow === "p3";
       if (!baseline || !kept) return;
       document.getElementById("journeyBaseline").replaceChildren(compositionReference("Your V1", baseline.squares));
       document.getElementById("journeyFinal").replaceChildren(compositionReference("Final choice · " + kept.title, kept.squares));
-      document.getElementById("finalReasonLabel").textContent = choices.length > 1
-        ? "In one sentence, why did you choose this version?"
-        : "After viewing the Gallery, what confirmed your decision to keep V1?";
+      document.getElementById("finalReasonLabel").textContent =
+        `What makes this version feel right for ${selectedConcept.toLowerCase()} now?`;
     }
 
     function buildSessionPayload() {
@@ -1902,6 +1904,7 @@ const isP3 = document.body.dataset.flow === "p3";
       if (!firstReflection) {
         workingSquares = clone(draft.explorationDraft || explorations[reviewedArrangement] || explorations.at(-1));
         document.getElementById("goalField").value = draft.initialGoal || "";
+        if (isP3) document.getElementById("nextField").value = draft.plannedNextBeforeFeedback || "";
         goToStep(isP3 && draft.currentStep === 1.25 && reviewedArrangement !== null ? 1.25 : explorations.length === EXPLORATION_COUNT ? 1.1 : 1);
         return;
       }
