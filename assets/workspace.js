@@ -400,6 +400,9 @@ const isP3 = document.body.dataset.flow === "p3";
     let markedSample = null;
     let savedSamples = [];
     let variationSkipped = false;
+    let exportUnlocked = false;
+    let decisionRecorded = false;
+    let revisingDecision = false;
     let compareRequested = false;
 
     function gallerySampleCard(index) {
@@ -465,7 +468,7 @@ const isP3 = document.body.dataset.flow === "p3";
       });
       examples.forEach(([title], index) => {
         const card = gallerySampleCard(index);
-        if (mode === "online") {
+        if (mode === "online" && (!isP3 || !secondReflection)) {
           const mark = document.createElement("button");
           mark.type = "button";
           mark.className = "btn btn-sm sample-save";
@@ -763,6 +766,9 @@ const isP3 = document.body.dataset.flow === "p3";
       markedSample = null;
       savedSamples = [];
       variationSkipped = false;
+      exportUnlocked = false;
+      decisionRecorded = false;
+      revisingDecision = false;
       compareRequested = false;
       document.getElementById("reflectionHelp").open = false;
       document.getElementById("draftStatus").textContent = "";
@@ -871,15 +877,17 @@ const isP3 = document.body.dataset.flow === "p3";
     function renderExplorationReview() {
       const list = document.getElementById("explorationList");
       document.getElementById("explorationReviewPrompt").textContent =
-        `Compare your arrangements. Which one best shows ${selectedConcept.toLowerCase()}?`;
+        v1Locked ? "Review your six arrangements. Your selected V1 is marked."
+          : `Compare your arrangements. Which one best shows ${selectedConcept.toLowerCase()}?`;
       list.replaceChildren();
       explorations.forEach((squares, index) => {
         const item = document.createElement("li");
         const button = document.createElement("button");
         const caption = document.createElement("span");
         button.type = "button";
+        button.disabled = v1Locked;
         button.className = "btn exploration-option";
-        caption.textContent = "Arrangement " + (index + 1);
+        caption.textContent = "Arrangement " + (index + 1) + (v1Locked && index === reviewedArrangement ? " · V1" : "");
         button.append(explorationThumbnail(squares), caption);
         button.setAttribute("aria-pressed", String(index === reviewedArrangement));
         button.addEventListener("click", () => {
@@ -930,7 +938,7 @@ const isP3 = document.body.dataset.flow === "p3";
       const nextVisible = !document.getElementById("reflectionNext").hidden;
       const continueButton = document.getElementById("continueReflectionBtn");
       continueButton.disabled = !hasResponse;
-      continueButton.hidden = nextVisible;
+      continueButton.hidden = nextVisible || (isP3 && Boolean(secondReflection) && !revisingDecision);
       updateMobileSteps();
     }
 
@@ -942,11 +950,16 @@ const isP3 = document.body.dataset.flow === "p3";
     }
 
     function finishReflection(redesign) {
-      if (isP3) variationSkipped = !redesign;
       const text = document.getElementById("understandingShiftField").value.trim();
       if (!text) {
         document.getElementById("understandingShiftField").focus();
         return;
+      }
+      if (isP3) {
+        variationSkipped = !redesign;
+        exportUnlocked = exportUnlocked || !redesign;
+        decisionRecorded = false;
+        revisingDecision = false;
       }
       secondReflection = { text, inspiration: [...inspiration] };
       compareRequested = false;
@@ -982,15 +995,18 @@ const isP3 = document.body.dataset.flow === "p3";
           1.5: "3 of 5 · Explore Gallery", 2: "4 of 5 · Reflect & Decide", 3: "4 of 5 · Try a variation", 4: "5 of 5 · Compare & Export"};
         document.getElementById("mobileStageLabel").textContent = "Step " + labels[currentStep];
         const label = variationSkipped ? "Variation skipped (optional)" : "Try a variation (optional)";
-        const variation = document.getElementById("stepNav3");
-        variation.hidden = currentStep < 2;
-        variation.textContent = variationSkipped ? "Skipped" : "+ Variation";
-        variation.setAttribute("aria-label", label);
-        document.getElementById("stepNav3").classList.toggle("is-skipped", variationSkipped);
-        const mobileVariation = mobileProgress.querySelector('[data-step="3"]');
-        mobileVariation.closest("li").hidden = variation.hidden;
-        mobileVariation.textContent = variationSkipped ? "Skipped" : "+ Variation";
-        mobileVariation.setAttribute("aria-label", label);
+        for (const button of document.querySelectorAll('[data-click="navigate-p3-step"]')) {
+          const step = Number(button.dataset.step);
+          const active = step === activeStep;
+          button.disabled = active || !canVisitP3Step(step);
+          if (active) button.setAttribute("aria-current", "step");
+          else button.removeAttribute("aria-current");
+          if (step === 3) {
+            button.closest("li").hidden = currentStep < 2 && !secondReflection;
+            button.textContent = variationSkipped ? "Skipped" : "+ Variation";
+            button.setAttribute("aria-label", label);
+          }
+        }
         return;
       }
       const showsComparison = mode === "online" && choices.length > 1 &&
@@ -1067,6 +1083,43 @@ const isP3 = document.body.dataset.flow === "p3";
       goToStep(step);
     }
 
+    function canVisitP3Step(step) {
+      switch (step) {
+        case 1: return true;
+        case 1.25: return reviewedArrangement !== null || v1Locked;
+        case 1.5:
+        case 2: return v1Locked;
+        case 3: return Boolean(secondReflection) && !variationSkipped;
+        case 4: return exportUnlocked;
+        default: return false;
+      }
+    }
+
+    function navigateP3Step(step) {
+      if (!canVisitP3Step(step)) return;
+      if (currentStep === 3 && isWorkingDraftDirty) {
+        document.getElementById("versionSaveStatus").textContent = "Save or discard the draft before switching steps.";
+        return;
+      }
+      if (step === 1.25 && v1Locked) {
+        activeChoiceIdx = 0;
+        workingSquares = clone(choices[0].squares);
+      }
+      goToStep(step === 1 && v1Locked ? 1.1 : step);
+      persistSessionState();
+    }
+
+    function reviseReflectionDecision() {
+      revisingDecision = true;
+      const response = document.getElementById("understandingShiftField");
+      response.readOnly = false;
+      document.getElementById("reviseDecisionBtn").hidden = true;
+      document.getElementById("reviewDecisionStatus").hidden = true;
+      document.getElementById("reflectionNext").hidden = false;
+      validateStep2Gate();
+      response.focus();
+    }
+
     function goToStep(stepNumber) {
       if ((stepNumber >= 1.5 && !v1Locked) ||
           (stepNumber === 1.25 && mode === "inperson" && !workingPhoto)) {
@@ -1078,7 +1131,10 @@ const isP3 = document.body.dataset.flow === "p3";
         if (stepNumber === 1.1 && explorations.length < EXPLORATION_COUNT) return;
         if (stepNumber === 1.25 && reviewedArrangement === null) return;
       }
-      if (currentStep !== stepNumber) clearCanvasHistory();
+      if (currentStep !== stepNumber) {
+        clearCanvasHistory();
+        if (isP3) revisingDecision = false;
+      }
       currentStep = stepNumber;
 
       [1, 2, 3, 4].forEach(n => {
@@ -1146,6 +1202,16 @@ const isP3 = document.body.dataset.flow === "p3";
       syncPhotoWorkspace();
       if (isGallery) renderGallery();
       if (currentStep === 2) {
+        if (isP3) {
+          const reviewing = Boolean(secondReflection) && !revisingDecision;
+          const response = document.getElementById("understandingShiftField");
+          response.readOnly = reviewing;
+          if (reviewing) response.value = secondReflection.text;
+          document.getElementById("reviseDecisionBtn").hidden = !reviewing;
+          const status = document.getElementById("reviewDecisionStatus");
+          status.hidden = !reviewing;
+          status.textContent = variationSkipped ? "You chose to keep V1." : "You chose to explore a variation.";
+        }
         workingSquares = clone(choices[0].squares);
         workingPhoto = choices[0].photo || "";
         activeChoiceIdx = 0;
@@ -1168,7 +1234,14 @@ const isP3 = document.body.dataset.flow === "p3";
         document.getElementById("journeyAfter").textContent = secondReflection?.text || "";
         if (isP3) renderJourneyReferences();
         if (isCompare) renderCompareGallery();
-        else document.getElementById("selectedSummaryBadge").textContent =
+        if (isP3 && decisionRecorded) {
+          document.getElementById("continueDecisionBtn").hidden = true;
+          document.getElementById("selectedSummaryBadge").hidden = false;
+          document.getElementById("decisionPanel").hidden = false;
+          if (isCompare) renderCompareGallery();
+          recordDecisionLog(false);
+        }
+        if (!isCompare) document.getElementById("selectedSummaryBadge").textContent =
           `Kept: ${choices[keptChoiceIdx]?.title || "V1"}`;
       }
 
@@ -1202,6 +1275,7 @@ const isP3 = document.body.dataset.flow === "p3";
         }
       }
       compareRequested = mode === "online" && choices.length > 1;
+      if (isP3) exportUnlocked = true;
       goToStep(4);
       persistSessionState();
     }
@@ -1717,6 +1791,7 @@ const isP3 = document.body.dataset.flow === "p3";
         keepBtn.setAttribute("aria-pressed", String(isKept));
         keepBtn.textContent = isKept ? "Kept Version" : "Select to Keep";
         keepBtn.addEventListener("click", () => {
+          if (isP3 && keptChoiceIdx !== idx) decisionRecorded = false;
           keptChoiceIdx = idx;
           showDecision();
           renderCompareGallery();
@@ -1762,7 +1837,7 @@ const isP3 = document.body.dataset.flow === "p3";
         reviewedArrangement,
         explorationDraft: mode === "online" && !v1Locked ? workingSquares : null,
         markedSample,
-        ...(isP3 && { savedSamples, variationSkipped, activeChoiceIdx, workingDraft: workingSquares }),
+        ...(isP3 && { savedSamples, variationSkipped, exportUnlocked, decisionRecorded, activeChoiceIdx, workingDraft: workingSquares }),
         compareRequested,
         concept: selectedConcept,
         firstReflection,
@@ -1773,10 +1848,10 @@ const isP3 = document.body.dataset.flow === "p3";
           inspiringWorks: galleryPosts().filter(post => inspiration.has(post.id))
         }),
         keptChoiceIdx,
-        reflectionDraft: document.getElementById("understandingShiftField").value.trim(),
+        reflectionDraft: (isP3 && secondReflection && !revisingDecision ? secondReflection.text : document.getElementById("understandingShiftField").value).trim(),
         initialGoal: document.getElementById("goalField").value.trim(),
         plannedNextBeforeFeedback: document.getElementById("nextField").value.trim(),
-        understandingShiftExplanation: document.getElementById("understandingShiftField").value.trim(),
+        understandingShiftExplanation: (isP3 && secondReflection ? secondReflection.text : document.getElementById("understandingShiftField").value).trim(),
         finalKeptVersion: kept ? kept.title : "None",
         finalDecisionRationale: document.getElementById("finalReasonField").value.trim(),
         versionsHistory: choices
@@ -1840,6 +1915,8 @@ const isP3 = document.body.dataset.flow === "p3";
         activeChoiceIdx = draft.activeChoiceIdx ?? 0;
       }
       compareRequested = Boolean(draft.compareRequested);
+      exportUnlocked = draft.exportUnlocked ?? Boolean(secondReflection && (draft.currentStep === 4 || variationSkipped || compareRequested));
+      decisionRecorded = Boolean(draft.decisionRecorded);
       galleryPostId = draft.galleryPostId;
       (draft.inspirationIds || []).forEach(id => inspiration.add(id));
       if (!isP3 || draft.currentStep !== 3 || !draft.workingDraft?.length) workingSquares = clone(choices[0].squares);
@@ -1861,7 +1938,10 @@ const isP3 = document.body.dataset.flow === "p3";
       const resumeStep = secondReflection && draft.currentStep === 3 ? 3
         : secondReflection && secondReflection.text === draft.reflectionDraft ? 4
         : draft.reflectionDraft || (isP3 && draft.currentStep === 2) ? 2 : 1.5;
-      goToStep(resumeStep);
+      const savedStep = draft.currentStep;
+      if (isP3 && savedStep === 1.1) goToStep(1.1);
+      else if (isP3 && canVisitP3Step(savedStep)) goToStep(savedStep);
+      else goToStep(resumeStep);
     }
 
     function resetSessionStorage() {
@@ -1887,8 +1967,9 @@ const isP3 = document.body.dataset.flow === "p3";
       document.getElementById("finalReasonLabel").focus();
     }
 
-    function recordDecisionLog() {
-      const saved = persistSessionState();
+    function recordDecisionLog(record = true) {
+      if (isP3 && record) decisionRecorded = true;
+      const saved = record ? persistSessionState() : true;
       const payload = buildSessionPayload();
       const output = document.getElementById("finalLogOutput");
       output.replaceChildren();
@@ -1903,7 +1984,7 @@ const isP3 = document.body.dataset.flow === "p3";
       output.appendChild(metaLine);
 
       const shiftLine = document.createElement("div");
-      shiftLine.textContent = `Understanding Shift (${payload.reflectionAlignmentTag}): ${payload.understandingShiftExplanation}`;
+      shiftLine.textContent = `Understanding Shift: ${payload.understandingShiftExplanation}`;
       output.appendChild(shiftLine);
 
       payload.versionsHistory.forEach((c, idx) => {
@@ -1916,7 +1997,7 @@ const isP3 = document.body.dataset.flow === "p3";
       const reasonLine = document.createElement("div");
       reasonLine.textContent = `Final Rationale: ${payload.finalDecisionRationale || "None recorded"}`;
       output.appendChild(reasonLine);
-      output.focus();
+      if (record) output.focus();
     }
 
     function exportSessionJSON() {
@@ -1976,6 +2057,8 @@ const isP3 = document.body.dataset.flow === "p3";
       "advance-tutorial": () => advanceTutorial(),
       "close-tutorial": () => closeTutorial(),
       "open-tutorial": () => openTutorial(),
+      "navigate-p3-step": event => navigateP3Step(Number(event.currentTarget.dataset.step)),
+      "revise-reflection-decision": () => reviseReflectionDecision(),
       "navigate-mobile-step": () => navigateMobileStep(1),
       "navigate-mobile-step-2": () => navigateMobileStep(2),
       "navigate-mobile-step-3": () => navigateMobileStep(3),
@@ -2041,7 +2124,10 @@ const isP3 = document.body.dataset.flow === "p3";
     const inputActions = {
       "validate-step1-gate": () => { validateStep1Gate(); if (isP3) persistSessionState(); },
       "validate-step2-gate": () => { validateStep2Gate(); if (isP3) persistSessionState(); },
-      "hide-decision-export": () => { hideDecisionExport(); if (isP3) persistSessionState(); },
+      "hide-decision-export": () => {
+        hideDecisionExport();
+        if (isP3) { decisionRecorded = false; persistSessionState(); }
+      },
     };
 
     for (const [event, actions] of Object.entries({

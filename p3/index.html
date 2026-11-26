@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>4SQUARES Workspace</title>
-  <link rel="stylesheet" href="../assets/workspace.css?v=aa00e591e9">
+  <link rel="stylesheet" href="../assets/workspace.css?v=4eb8c42884">
 </head>
 <body data-flow="p3">
 
@@ -58,24 +58,24 @@
 
       <nav class="desktop-progress progress-pill glass-floating" aria-label="Activity progress">
         <ol class="step-list">
-          <li id="stepNav1" class="step-item" aria-current="step">1. Create V1</li>
-          <li id="stepNavPre" class="step-item">2. Pre-Reflect</li>
-          <li id="stepNavGallery" class="step-item">3. Gallery</li>
-          <li id="stepNav2" class="step-item">4. Decide</li>
-          <li id="stepNav3" class="step-item">+ Variation</li>
-          <li id="stepNav4" class="step-item">5. Export</li>
+          <li id="stepNav1" class="step-item"><button type="button" data-step="1" data-click="navigate-p3-step">1. Create V1</button></li>
+          <li id="stepNavPre" class="step-item"><button type="button" data-step="1.25" data-click="navigate-p3-step">2. Pre-Reflect</button></li>
+          <li id="stepNavGallery" class="step-item"><button type="button" data-step="1.5" data-click="navigate-p3-step">3. Gallery</button></li>
+          <li id="stepNav2" class="step-item"><button type="button" data-step="2" data-click="navigate-p3-step">4. Decide</button></li>
+          <li id="stepNav3" class="step-item"><button type="button" data-step="3" data-click="navigate-p3-step">+ Variation</button></li>
+          <li id="stepNav4" class="step-item"><button type="button" data-step="4" data-click="navigate-p3-step">5. Export</button></li>
         </ol>
       </nav>
 
       <nav class="mobile-progress compact-progress glass-floating" aria-label="Activity steps">
         <span id="mobileStageLabel" class="sr-only">Step 1 of 5</span>
         <ol id="mobileStepList" class="step-list mobile-step-list">
-          <li><button type="button" class="btn" data-step="1" data-click="navigate-mobile-step">1. Create V1</button></li>
-          <li><button type="button" class="btn" data-step="1.25" data-click="navigate-pre-reflection">2. Pre-Reflect</button></li>
-          <li><button type="button" class="btn" data-step="1.5" data-click="navigate-mobile-step-5">3. Gallery</button></li>
-          <li><button type="button" class="btn" data-step="2" data-click="navigate-mobile-step-2">4. Decide</button></li>
-          <li><button type="button" class="btn" data-step="3" data-click="navigate-mobile-step-3">+ Variation</button></li>
-          <li><button type="button" class="btn" data-step="4" data-click="navigate-mobile-step-4">5. Export</button></li>
+          <li><button type="button" class="btn" data-step="1" data-click="navigate-p3-step">1. Create V1</button></li>
+          <li><button type="button" class="btn" data-step="1.25" data-click="navigate-p3-step">2. Pre-Reflect</button></li>
+          <li><button type="button" class="btn" data-step="1.5" data-click="navigate-p3-step">3. Gallery</button></li>
+          <li><button type="button" class="btn" data-step="2" data-click="navigate-p3-step">4. Decide</button></li>
+          <li><button type="button" class="btn" data-step="3" data-click="navigate-p3-step">+ Variation</button></li>
+          <li><button type="button" class="btn" data-step="4" data-click="navigate-p3-step">5. Export</button></li>
         </ol>
       </nav>
 
@@ -246,6 +246,8 @@
             <label for="understandingShiftField" id="secondReflectionPrompt">What did the Gallery help you notice?</label>
             <textarea id="understandingShiftField" rows="4" data-input="validate-step2-gate"></textarea>
           </div>
+          <p id="reviewDecisionStatus" class="meta-note" hidden></p>
+          <button type="button" id="reviseDecisionBtn" class="btn" data-click="revise-reflection-decision" hidden>Revise decision</button>
           <button type="button" id="continueReflectionBtn" class="btn btn-primary" data-click="show-reflection-next" aria-controls="reflectionNext" disabled>Continue</button>
           <section id="reflectionNext" class="reflection-next-stage" aria-labelledby="reflectionNextTitle" hidden>
             <h3 id="reflectionNextTitle" class="panel-title" tabindex="-1">Choose how to continue</h3>
@@ -327,6 +329,6 @@
       <button type="button" class="btn reset-danger" data-click="reset-session-storage">Delete session</button>
     </div>
   </dialog>
-  <script type="module" src="../assets/workspace.js?v=aa00e591e9"></script>
+  <script type="module" src="../assets/workspace.js?v=4eb8c42884"></script>
 </body>
 </html>

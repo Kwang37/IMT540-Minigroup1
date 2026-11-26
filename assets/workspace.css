@@ -1354,3 +1354,19 @@
 @media (min-width: 960px) {
   [data-flow="p3"] #gallerySamples { grid-auto-columns: min(390px, calc((100% - 84px) / 3.15)); }
 }
+
+.p3-header .progress-pill .step-item { padding: 0; }
+.p3-header .progress-pill .step-item button {
+  display: block;
+  padding: 6px 9px;
+  background: transparent;
+  border: 0;
+  border-radius: inherit;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+.p3-header .progress-pill .step-item button:disabled { cursor: default; }
+.p3-header .progress-pill .step-item button:disabled:not([aria-current]) { color: #64748b; }
+.p3-header .progress-pill .step-item button:not(:disabled):hover { background: #e2e8f0; }
+.p3-header .progress-pill #stepNav3 { padding: 0; }
