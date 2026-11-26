@@ -1517,3 +1517,15 @@
   .spatial-entry .entry-wash, .spatial-entry .concept-bubble { animation: none; }
   .spatial-entry .concept-bubble:is(.is-touch-pressed, .is-touch-confirmed) { scale: 1; }
 }
+
+
+/* Suppress viewport bounce while the P3 canvas is editable. */
+@media (any-pointer: coarse) {
+  html:has(body[data-flow="p3"] #workspaceShell:not([hidden]) #board.is-editable) {
+    overscroll-behavior-y: none;
+  }
+  body[data-flow="p3"] #board.is-editable .square-node {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}

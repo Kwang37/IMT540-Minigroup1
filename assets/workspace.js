@@ -1493,6 +1493,17 @@ const isP3 = document.body.dataset.flow === "p3";
 
     const gestureBoard = document.getElementById("board");
 
+    // Embedded iOS browsers may scroll on a touch drag despite touch-action.
+    // Cancel only moves initiated on editable squares; keep taps and page scrolling native.
+    if (isP3) gestureBoard.addEventListener("touchmove", event => {
+      if (!event.cancelable || !canModifyBoard()) return;
+      const startedOnSquare = Array.from(event.targetTouches).some(touch =>
+        touch.target instanceof Element && touch.target.closest("#board button.square-node")
+      );
+      if (startedOnSquare || squareGesture?.pointerType === "touch") event.preventDefault();
+    }, { passive: false });
+
+
     function pointerDistance(points) {
       const [a, b] = points.values();
       return Math.hypot(a.x - b.x, a.y - b.y);
