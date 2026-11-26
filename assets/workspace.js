@@ -327,7 +327,7 @@ const isP3 = document.body.dataset.flow === "p3";
 
     function createFlipCard(title, source, reading, layout, photo) {
       const figure = document.createElement("figure");
-      figure.className = "clothesline-card";
+      figure.className = "clothesline-card glass-card";
       const button = document.createElement("button");
       button.type = "button";
       button.className = "flip-art";
@@ -985,7 +985,10 @@ const isP3 = document.body.dataset.flow === "p3";
         variation.textContent = variationSkipped ? "Skipped" : "+ Variation";
         variation.setAttribute("aria-label", label);
         document.getElementById("stepNav3").classList.toggle("is-skipped", variationSkipped);
-        mobileProgress.querySelector('[data-step="3"]').textContent = label;
+        const mobileVariation = mobileProgress.querySelector('[data-step="3"]');
+        mobileVariation.closest("li").hidden = variation.hidden;
+        mobileVariation.textContent = variationSkipped ? "Skipped" : "+ Variation";
+        mobileVariation.setAttribute("aria-label", label);
         return;
       }
       const showsComparison = mode === "online" && choices.length > 1 &&
@@ -1086,7 +1089,6 @@ const isP3 = document.body.dataset.flow === "p3";
       });
 
       if (isP3) {
-        document.querySelector(".mobile-step-menu").open = false;
         const pre = document.getElementById("stepNavPre");
         if (currentStep === 1.25) pre.setAttribute("aria-current", "step");
         else pre.removeAttribute("aria-current");
@@ -1652,7 +1654,7 @@ const isP3 = document.body.dataset.flow === "p3";
       choices.forEach((ch, idx) => {
         const isKept = idx === keptChoiceIdx && !document.getElementById("decisionPanel").hidden;
         const article = document.createElement("article");
-        article.className = `compare-item ${isKept ? "is-selected" : ""}`;
+        article.className = `compare-item glass-card ${isKept ? "is-selected" : ""}`;
 
         const head = document.createElement("header");
         head.className = "compare-item-head";
