@@ -716,8 +716,27 @@ const isP3 = document.body.dataset.flow === "p3";
       (bubbles.find(button => button.textContent.trim() === selectedConcept) || bubbles[0]).focus();
     }
 
+    const conceptIcons = Object.freeze({
+      Balance: "M12 3v17m-5 0h10M4 7h16M5 7l-3 6h6L5 7Zm14 0-3 6h6l-3-6Z",
+      Tension: "M5 19 19 5M5 13v6h6m2-14h6v6",
+      Chaos: "M5 5h2v2H5zM16 9h2v2h-2zM8 14h2v2H8zM17 18h2v2h-2z",
+      Order: "M4 4h16v16H4zM9.3 4v16m5.4-16v16M4 9.3h16M4 14.7h16"
+    });
+
+    function setLocalSaveStatus(state, message) {
+      const indicator = document.getElementById("localSaveStatus");
+      indicator.dataset.state = state;
+      indicator.textContent = message;
+    }
+
     function launchApp(selectedMode) {
-      document.getElementById("conceptIndicator").textContent = selectedConcept;
+      const concept = document.getElementById("conceptIndicator");
+      concept.textContent = selectedConcept;
+      if (isP3) {
+        const icon = Object.hasOwn(conceptIcons, selectedConcept) ? conceptIcons[selectedConcept] : "";
+        document.getElementById("conceptIcon").setAttribute("d", icon);
+        concept.closest(".concept-chip").dataset.concept = selectedConcept;
+      }
       mode = isP3 ? "online" : selectedMode;
       document.getElementById("entryGate").hidden = true;
       document.getElementById("workspaceShell").hidden = false;
@@ -961,7 +980,10 @@ const isP3 = document.body.dataset.flow === "p3";
           1.5: "3 of 5 · Explore Gallery", 2: "4 of 5 · Reflect & Decide", 3: "4 of 5 · Try a variation", 4: "5 of 5 · Compare & Export"};
         document.getElementById("mobileStageLabel").textContent = "Step " + labels[currentStep];
         const label = variationSkipped ? "Variation skipped (optional)" : "Try a variation (optional)";
-        document.getElementById("stepNav3").textContent = label;
+        const variation = document.getElementById("stepNav3");
+        variation.hidden = currentStep < 2;
+        variation.textContent = variationSkipped ? "Skipped" : "+ Variation";
+        variation.setAttribute("aria-label", label);
         document.getElementById("stepNav3").classList.toggle("is-skipped", variationSkipped);
         mobileProgress.querySelector('[data-step="3"]').textContent = label;
         return;
@@ -1760,11 +1782,10 @@ const isP3 = document.body.dataset.flow === "p3";
     function persistSessionState() {
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(buildSessionPayload()));
-        if (isP3) document.getElementById("localSaveStatus").textContent =
-          "Saved locally · " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+        if (isP3) setLocalSaveStatus("saved", "Saved locally · " + new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }));
         return true;
       } catch {
-        if (isP3) document.getElementById("localSaveStatus").textContent = "Could not save locally. Export before closing.";
+        if (isP3) setLocalSaveStatus("error", "Local save failed");
         return false;
       }
     }
@@ -1842,7 +1863,7 @@ const isP3 = document.body.dataset.flow === "p3";
     function resetSessionStorage() {
       if (isP3) {
         document.getElementById("resetDialog").close();
-        document.getElementById("localSaveStatus").textContent = "Progress saves in this browser.";
+        setLocalSaveStatus("idle", "Local autosave");
       }
       document.querySelector(".session-actions").open = false;
       try { localStorage.removeItem(STORAGE_KEY); } catch {}

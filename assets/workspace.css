@@ -1197,3 +1197,70 @@
 #resetDialog { width: min(92vw, 500px); padding: 24px; border: 1px solid var(--border); border-radius: 12px; }
 #resetDialog::backdrop { background: rgb(0 0 0 / 45%); }
 [data-flow="p3"] .session-actions { display: block; }
+
+.p3-header {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
+  grid-template-areas: "concept steps save";
+  gap: 8px 12px;
+  padding: 10px clamp(12px, 2vw, 28px) 18px;
+  border: 0;
+}
+.p3-header .workspace-top-row { grid-area: concept; justify-content: start; flex-wrap: nowrap; gap: 6px; }
+.p3-header .workspace-concept { margin: 0; align-items: center; }
+.p3-header .workspace-concept-label { font-size: .75rem; }
+.concept-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid var(--chip-border,#e2e8f0);
+  border-radius: 999px;
+  background: var(--chip-bg,#f8fafc);
+  color: var(--chip-ink,#334155);
+  font-size: .75rem;
+}
+.concept-chip[data-concept="Balance"] { --chip-bg:#eef2ff; --chip-ink:#4338ca; --chip-border:#dce2ff; }
+.concept-chip[data-concept="Tension"] { --chip-bg:#fffbeb; --chip-ink:#92400e; --chip-border:#fde8ae; }
+.concept-chip[data-concept="Chaos"] { --chip-bg:#fff1f2; --chip-ink:#9f1239; --chip-border:#fecdd3; }
+.concept-chip[data-concept="Order"] { --chip-bg:#ecfdf5; --chip-ink:#065f46; --chip-border:#bbf7d0; }
+.p3-header .workspace-actions { gap: 3px; }
+.p3-header .workspace-actions::before { content:""; width: 1px; height: 18px; background: #e2e8f0; }
+.p3-header .workspace-tutorial { display: inline-flex; align-items: center; gap: 4px; font-size: .75rem; padding-inline: 5px; }
+.p3-header .progress-pill, .p3-header .compact-progress {
+  grid-area: steps;
+  justify-self: center;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid rgb(15 23 42 / 9%);
+  background: rgb(255 255 255 / 85%);
+  box-shadow: 0 2px 6px rgb(15 23 42 / 5%);
+  backdrop-filter: blur(12px);
+  border-radius: 999px;
+}
+.p3-header .progress-pill .step-list { flex-wrap: nowrap; margin: 0; padding: 4px; gap: 3px; }
+.p3-header .step-item { border-radius: 999px; white-space: nowrap; padding: 6px 9px; transition: color .2s, background-color .2s; }
+.p3-header #stepNav3 { border: 1px dashed #aab5c4; padding-block: 5px; }
+.p3-header #localSaveStatus {
+  grid-area: save;
+  justify-self: end;
+  text-align: end;
+  font-size: .75rem;
+  color: #536174;
+}
+.save-indicator::before { content:""; display: inline-block; width: 6px; height: 6px; margin-inline-end: 6px; border-radius: 50%; background: #94a3b8; vertical-align: .1em; }
+.save-indicator[data-state="saved"]::before { background: #059669; }
+.save-indicator[data-state="error"] { color: #9f1239; }
+.save-indicator[data-state="error"]::before { background: #be123c; }
+@media (max-width:1023px) {
+  .p3-header { grid-template-columns: minmax(0,1fr) auto; grid-template-areas: "concept save" "steps steps"; }
+}
+@media (max-width:767px) {
+  .p3-header .workspace-concept-label { display: none; }
+  .p3-header .compact-progress { width: min(100%, 340px); border-radius: 24px; }
+  .p3-header .mobile-step-menu summary { padding-inline: 14px; cursor: pointer; font-size: .875rem; }
+  .p3-header #mobileStepList { padding: 0 6px 6px; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .p3-header .step-item { transition: none; }
+}
