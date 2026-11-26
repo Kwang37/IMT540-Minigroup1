@@ -1499,6 +1499,8 @@
   .spatial-entry .concept-bubble.is-touch-confirmed svg { opacity: .22; transition-duration: 160ms; }
 }
 @media (hover: none) and (pointer: coarse) {
+  .spatial-entry .concept-bubble { animation-name: concept-touch-float; }
+  .spatial-entry .concept-bubble:hover:not(:focus-visible, .is-spotlit, .is-touch-pressed, .is-touch-confirmed) svg { opacity: .06; }
   .spatial-entry .concept-bubble:not(:focus-visible, .is-spotlit, .is-touch-pressed, .is-touch-confirmed):hover {
     animation-play-state: running;
     border-color: rgb(75 46 131 / 12%);
@@ -1506,6 +1508,10 @@
   }
   .spatial-entry .entry-wash { animation: entry-wash-drift 14s ease-in-out infinite alternate; }
   .spatial-entry .entry-wash-gold { animation-direction: alternate-reverse; }
+}
+@keyframes concept-touch-float {
+  0%, 100% { transform: translateY(-6px); }
+  50% { transform: translateY(6px); }
 }
 @keyframes entry-wash-drift {
   from { transform: translate3d(-16px, -10px, 0); }
@@ -1517,7 +1523,7 @@
   .spatial-entry #conceptPicker { margin-top: 18px; row-gap: 20px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .spatial-entry .entry-wash { animation: none; }
+  .spatial-entry .entry-wash, .spatial-entry .concept-bubble { animation: none; }
   .spatial-entry .concept-bubble, .spatial-entry .concept-bubble svg { transition: none; }
   .spatial-entry .concept-bubble:is(.is-touch-pressed, .is-touch-confirmed) { scale: 1; }
 }

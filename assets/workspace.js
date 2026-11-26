@@ -2202,6 +2202,7 @@ const isP3 = document.body.dataset.flow === "p3";
       let spotlightTimer = 0;
       let interacted = false;
       let press = null;
+      let releasedBubble = null;
       let confirming = false;
 
       function stopSpotlight() {
@@ -2228,6 +2229,7 @@ const isP3 = document.body.dataset.flow === "p3";
       entry.addEventListener("pointerdown", event => {
         if (picker.hidden || !touchLayout.matches) return;
         interacted = true;
+        releasedBubble = null;
         stopSpotlight();
         const bubble = event.target.closest("#conceptPicker .concept-bubble");
         if (!event.isPrimary || event.pointerType === "mouse" || !bubble || confirming) return;
@@ -2238,6 +2240,7 @@ const isP3 = document.body.dataset.flow === "p3";
       function releaseBubble(event) {
         if (press?.pointerId !== event.pointerId) return;
         press.bubble.classList.remove("is-touch-pressed");
+        releasedBubble = event.type === "pointerup" ? press.bubble : null;
         press = null;
       }
 
@@ -2252,7 +2255,10 @@ const isP3 = document.body.dataset.flow === "p3";
           event.stopPropagation();
           return;
         }
-        if (!touchLayout.matches || !["touch", "pen"].includes(event.pointerType) || reducedMotion.matches) return;
+        const touchClick = ["touch", "pen"].includes(event.pointerType) ||
+          (!event.pointerType && event.detail > 0 && releasedBubble === bubble);
+        releasedBubble = null;
+        if (!touchLayout.matches || !touchClick || reducedMotion.matches) return;
         event.stopPropagation();
         confirming = true;
         bubble.classList.add("is-touch-confirmed");
