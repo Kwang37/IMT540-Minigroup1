@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>4SQUARES Workspace</title>
-  <link rel="stylesheet" href="../assets/workspace.css?v=entry-motion-1">
+  <link rel="stylesheet" href="../assets/workspace.css?v=studio-journal-1">
 </head>
 <body data-flow="p3">
 
@@ -199,41 +199,40 @@
           <p id="explorationReviewPrompt"></p>
           <ul id="explorationList" class="exploration-grid" aria-label="Your saved arrangements"></ul>
         </section>
-        <section id="panelStep1" class="panel-group" aria-labelledby="step1Title">
-          <div class="disclosure-header">
-            <h2 id="step1Title" class="panel-title">Make Your First Composition</h2>
-            <span id="v1LockBadge" class="badge">In progress</span>
-          </div>
-
-          <button id="backToComposition" type="button" class="btn" data-click="go-to-step-4" hidden>Back to Composition</button>
-          <div>
-            <p id="reflectionIntro" class="meta-note">Take a moment with your arrangement before opening the Gallery. A sentence or two is enough.</p>
-          </div>
-
-          <div>
-            <label for="goalField" id="firstReflectionPrompt">How does this arrangement capture your chosen idea?</label>
-            <p id="firstReflectionHint" class="meta-note">Start with one detail, such as a tight gap, a tilted edge, or an open corner.</p>
-            <textarea id="goalField" aria-describedby="firstReflectionHint" data-input="validate-step1-gate"></textarea>
-          </div>
-
-          <div id="nextExploration">
-            <label for="nextField">What might you test next? (Optional)</label>
-            <input type="text" id="nextField" data-input="validate-step1-gate" placeholder="One thing I might change is …" />
-          </div>
-
-          <details id="reflectionHelp">
-            <summary>Need a starting point?</summary>
-            <p>Try noticing one of these details.</p>
-            <ul>
-              <li><strong>Closeness</strong> · Squares that almost touch or feel pulled apart.</li>
-              <li><strong>Edges and tilt</strong> · Edges that line up, overlap, or lean.</li>
-              <li><strong>Quiet space</strong> · Where the open space draws your eye.</li>
-            </ul>
-          </details>
-          <div class="action-row">
-            <button type="button" id="lockV1Btn" class="btn btn-primary" data-click="lock-baseline-v1">
-              Save & Open Gallery
-            </button>
+        <section id="panelStep1" class="panel-group studio-reflection" aria-labelledby="step1Title">
+          <header class="studio-reflection-header">
+            <button id="backToComposition" type="button" class="btn studio-back" data-click="go-to-step-4" hidden>Back to Arrangements</button>
+            <div class="disclosure-header">
+              <h2 id="step1Title" class="panel-title">2. Reflect Before Gallery</h2>
+              <span id="v1LockBadge" class="badge">In progress</span>
+            </div>
+          </header>
+          <div class="studio-reflection-layout">
+            <div id="preReflectionPreview" class="studio-composition"></div>
+            <div class="studio-writing">
+              <div class="studio-prompt">
+                <h3><label for="goalField" id="firstReflectionPrompt">How does this arrangement capture your chosen idea?</label></h3>
+                <p id="reflectionIntro" class="meta-note">Take a moment with your arrangement before opening the Gallery. A sentence or two is enough.</p>
+                <textarea id="goalField" aria-describedby="reflectionIntro" placeholder="Start with one detail, such as a tight gap, a tilted edge, or an open corner..." data-input="validate-step1-gate"></textarea>
+              </div>
+              <details id="reflectionHelp" class="studio-disclosure">
+                <summary>Need a starting point?</summary>
+                <p>Try noticing one of these details.</p>
+                <ul>
+                  <li><strong>Closeness</strong> · Squares that almost touch or feel pulled apart.</li>
+                  <li><strong>Edges &amp; Tilt</strong> · Edges that line up, overlap, or lean.</li>
+                  <li><strong>Quiet Space</strong> · Where the open space draws your eye.</li>
+                </ul>
+              </details>
+              <details id="nextExploration" class="studio-disclosure studio-optional">
+                <summary>Add a quick note on what you might test next (optional)</summary>
+                <label for="nextField" class="sr-only">What might you test next?</label>
+                <input type="text" id="nextField" data-input="validate-step1-gate" placeholder="One thing I might change is ..." />
+              </details>
+              <div class="studio-reflection-actions">
+                <button type="button" id="lockV1Btn" class="btn btn-primary" data-click="lock-baseline-v1">Save &amp; Open Gallery</button>
+              </div>
+            </div>
           </div>
         </section>
 
@@ -334,6 +333,6 @@
       <button type="button" class="btn reset-danger" data-click="reset-session-storage">Delete session</button>
     </div>
   </dialog>
-  <script type="module" src="../assets/workspace.js?v=4a8a776534"></script>
+  <script type="module" src="../assets/workspace.js?v=studio-journal-1"></script>
 </body>
 </html>

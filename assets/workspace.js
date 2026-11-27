@@ -1167,7 +1167,19 @@ const isP3 = document.body.dataset.flow === "p3";
       const isCreation = currentStep === 1;
       const onlineCreation = !inPerson && isCreation;
       const isReview = !inPerson && currentStep === 1.1;
-      document.getElementById("stageSection").hidden = isGallery || isSummary || isReview;
+      const isStudioReflection = isP3 && currentStep === 1.25;
+      document.getElementById("stageSection").hidden = isGallery || isSummary || isReview || isStudioReflection;
+      const contextPanel = document.getElementById("contextPanel");
+      contextPanel.classList.toggle("glass-modal", isStudioReflection);
+      contextPanel.classList.toggle("studio-reflection-surface", isStudioReflection);
+      if (isStudioReflection) {
+        const squares = v1Locked ? choices[0].squares : workingSquares;
+        document.getElementById("preReflectionPreview").replaceChildren(
+          compositionReference(`Your V1 · ${selectedConcept}`, squares)
+        );
+        document.getElementById("nextExploration").open = false;
+        document.getElementById("reflectionHelp").open = false;
+      }
       document.getElementById("contextPanel").classList.toggle("exploration-review-screen", isReview);
       document.getElementById("onlineCreatePanel").hidden = !onlineCreation;
       if (isP3) {
