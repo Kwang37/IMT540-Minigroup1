@@ -1700,3 +1700,11 @@
 @media (max-width: 767px) {
   .studio-reflection-actions .btn { width: 100%; }
 }
+
+@media (prefers-reduced-motion: no-preference) {
+  .studio-optional[open] #nextField { animation: studio-note-appear 160ms ease-out; }
+}
+@keyframes studio-note-appear {
+  from { opacity: 0; transform: translateY(-3px); }
+  to { opacity: 1; transform: translateY(0); }
+}
